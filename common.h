@@ -132,6 +132,7 @@ protected:
     Value value;
 };
 
+// TODO использовать сигны вместо маг символов
 inline constexpr char kFormulaSign = '=';
 inline constexpr char kEscapeSign = '\'';
 

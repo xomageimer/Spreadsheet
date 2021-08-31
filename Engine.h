@@ -62,7 +62,7 @@ public:
 
     DependencyGraph & GetGraph();
 private:
-    std::vector<std::vector<std::shared_ptr<ICell>>> cells {};
+    std::vector<std::vector<std::weak_ptr<ICell>>> cells {};
     DependencyGraph dep_graph {*this};
 
     Size size {0, 0};

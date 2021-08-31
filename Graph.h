@@ -7,8 +7,8 @@
 #include <unordered_map>
 
 struct Edge {
-    Position from;
-    Position to;
+    std::weak_ptr<ICell> from;
+    std::weak_ptr<ICell> to;
 };
 using EdgeID = size_t;
 struct Edges {
@@ -19,17 +19,16 @@ struct Edges {
 struct DependencyGraph {
 public:
     explicit DependencyGraph(ISheet & com_sheet) : sheet(com_sheet) {}
-    EdgeID AddEdge(Position parent, Position child);
 
-    void Delete(Position pos);
-    void Reset(Position pos_to_reset, Position new_pos);
-
-    void InvalidOutcoming(Position pos_to_update);
-    void InvalidIncoming(Position pos_to_update);
+    std::weak_ptr<ICell> AddVertex(std::shared_ptr<ICell> new_cell);
+    EdgeID AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<ICell> child_cell);
+    void Delete(const std::shared_ptr<ICell>& cell_ptr);
+    void InvalidIncoming(std::shared_ptr<ICell> cell_ptr);
+    void InvalidOutcoming(std::shared_ptr<ICell> cell_ptr);
 private:
-    std::vector<Edge> incoming;
+    std::unordered_map<std::shared_ptr<ICell>, Edges> vertexes;
     std::vector<Edge> outcoming;
-    std::unordered_map<Position, Edges, PositionHash> incidence_lists;
+    std::vector<Edge> incoming;
 
     ISheet & sheet;
 };
