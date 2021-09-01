@@ -29,8 +29,10 @@ struct FormulaCell : public ICell, public IFormula {
     [[nodiscard]] std::string GetText() const override;
 
 protected:
-    std::optional<ASTree> as_tree;
+    mutable std::optional<AST::ASTree> as_tree;
     ISheet * sheet_;
+
+    void BuildAST() const;
 };
 
 struct DefaultCell : public ICell {

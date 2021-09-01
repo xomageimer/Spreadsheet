@@ -22,7 +22,9 @@ std::vector<Position> DefaultCell::GetReferencedCells() const {
 
 
 
-FormulaCell::FormulaCell(ICell::Value text_val, ISheet * sheet) : ICell(std::move(text_val)), sheet_(sheet) {}
+FormulaCell::FormulaCell(ICell::Value text_val, ISheet * sheet) : ICell(std::move(text_val)), sheet_(sheet) {
+    BuildAST();
+}
 
 std::unique_ptr<IFormula> ParseFormula(std::string expression) {
     return std::make_unique<FormulaCell>(expression);
@@ -37,11 +39,7 @@ ICell::Value FormulaCell::GetValue() const {
 }
 
 std::string FormulaCell::GetText() const {
-    if (std::holds_alternative<FormulaError>(value)){
-        return std::string{std::get<FormulaError>(value).ToString()};
-    } else {
-        return std::get<std::string>(value);
-    }
+    return "=" + GetExpression();
 }
 
 std::vector<Position> FormulaCell::GetReferencedCells() const {
@@ -52,27 +50,50 @@ std::string FormulaCell::GetExpression() const {
     return as_tree->GetExpression();
 }
 
-IFormula::Value FormulaCell::Evaluate(const ISheet &sheet) const { // TODO не забыть сделать здесь статус = VALID
+IFormula::Value FormulaCell::Evaluate(const ISheet &sheet) const {
+    if (status == Status::Error)
+        return evaluated_value;
 
-    return IFormula::Value();
+    IFormula::Value val;
+    try {
+        val = as_tree->Evaluate();
+        status = Status::Valid;
+    } catch (FormulaError & fe) {
+        status = Status::Error;
+
+        evaluated_value = fe;
+    }
+    return val;
 }
 
 IFormula::HandlingResult FormulaCell::HandleInsertedRows(int before, int count) {
-
+    as_tree->MutateRows(before, count);
 }
 
 IFormula::HandlingResult FormulaCell::HandleInsertedCols(int before, int count) {
-
+    as_tree->MutateCols(before, count);
 }
 
 IFormula::HandlingResult FormulaCell::HandleDeletedRows(int first, int count) {
-
+    as_tree->MutateRows(first, -count);
 }
 
 IFormula::HandlingResult FormulaCell::HandleDeletedCols(int first, int count) {
-
+    as_tree->MutateRows(first, -count);
 }
 
+void FormulaCell::BuildAST() const {
+    if (!as_tree || (as_tree && as_tree->GetCells().empty())) {
+        try {
+            std::stringstream ss(std::get<std::string>(value));
+            as_tree.emplace(AST::ParseFormula(ss, *sheet_));
+        } catch (FormulaError & fe) {
+            status = Status::Error;
+
+            evaluated_value = fe;
+        }
+    }
+}
 
 
 // TODO мб обработку исключения TableTooBigException надо вынести отдельно, дабы избежать копипасты
@@ -104,7 +125,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     }
 
     if (text.size() > 1 && text.front() == kFormulaSign){
-        auto val = std::make_shared<FormulaCell>(ICell::Value(text), this); // TODO проверять при создании корректность позиции ячейки, остальные ошибки формулы проверять при вычислениях
+        auto val = std::make_shared<FormulaCell>(ICell::Value(text.substr(1)), this); // TODO проверять при создании корректность позиции ячейки, остальные ошибки формулы проверять при вычислениях
         cells[pos.row][pos.col] = dep_graph.AddVertex(val);
     } else {
         auto val = std::make_shared<DefaultCell>(ICell::Value(text)); // TODO если текст можно трактовать как число, то хранить в Value число
@@ -126,7 +147,6 @@ ICell *SpreadSheet::GetCell(Position pos) {
     return cells.at(pos.row).at(pos.col).lock().get();
 }
 
-// TODO если ячейка была самой граничной, то размер стоит уменьшить!
 void SpreadSheet::ClearCell(Position pos) {
     if (!(size < pos))
         return;
@@ -232,12 +252,14 @@ void SpreadSheet::DeleteRows(int first, int count) {
         for (auto & el : cells[i]){
             if (!el.expired()) {
                 dep_graph.InvalidOutcoming(el.lock());
-                auto formula = dynamic_cast<FormulaCell *>(el.lock().get());
-                if (formula) {
-                    formula->HandleDeletedRows(first, count);
-                }
                 if (i < first + count) {
                     dep_graph.Delete(el.lock());
+                }
+                else {
+                    auto formula = dynamic_cast<FormulaCell *>(el.lock().get());
+                    if (formula) {
+                        formula->HandleDeletedRows(first, count);
+                    }
                 }
             }
         }
@@ -255,12 +277,13 @@ void SpreadSheet::DeleteCols(int first, int count) {
         for (int j = first; j < static_cast<int>(row.size()); j++){
             if (!row[j].expired()) {
                 dep_graph.InvalidOutcoming(row[j].lock());
-                auto formula = dynamic_cast<FormulaCell *>(row[j].lock().get());
-                if (formula) {
-                    formula->HandleDeletedCols(first, count);
-                }
                 if (j < first + count) {
                     dep_graph.Delete(row[j].lock());
+                } else {
+                    auto formula = dynamic_cast<FormulaCell *>(row[j].lock().get());
+                    if (formula) {
+                        formula->HandleDeletedCols(first, count);
+                    }
                 }
             }
         }
