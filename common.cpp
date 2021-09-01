@@ -16,15 +16,23 @@ Position Position::FromString(std::string_view str) {
     try {
         CheckPosException(std::isalpha(str.front()));
         while (std::isalpha(str.front())) {
-            col += col * (ALPHA_SIZE + 1) + str.front() - 'A';
+            CheckPosException(str.front() >= 'A' && str.front() <= 'Z');
+            col += col * (ALPHA_SIZE - 1) + str.front() - 'A';
             str.remove_prefix(1);
             if (std::isalpha(str.front()))
                 col++;
             CheckPosException(std::isalpha(str.front()) || std::isdigit(str.front()));
         }
 
+        CheckPosException(std::find_if(str.begin(), str.end(), [](auto ch) {
+            return !isdigit(ch);
+        }) == str.end());
         CheckPosException(std::isdigit(str.front()));
+        CheckPosException(std::stoi(std::string{str}) > 0);
         row = std::stoi(std::string{str}) - 1;
+
+        CheckPosException(col >= 0 && row >= 0);
+        CheckPosException(col < kMaxCols && row < kMaxRows);
     } catch (...) {
         return {row, col, STATUS::ERROR};
     }
@@ -52,7 +60,7 @@ bool Position::IsValid() const {
         status = STATUS::VALID;
         try {
             CheckPosException(col >= 0 && row >= 0);
-            CheckPosException(col <= kMaxCols && row <= kMaxRows);
+            CheckPosException(col < kMaxCols && row < kMaxRows);
         } catch (...){
             status = STATUS::ERROR;
         }
