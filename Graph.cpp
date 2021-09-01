@@ -3,19 +3,19 @@
 
 #include <algorithm>
 
-std::weak_ptr<ICell> DependencyGraph::AddVertex(std::shared_ptr<ICell> new_cell) {
+std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(std::shared_ptr<DefaultCell> new_cell) {
     auto [it, b] = vertexes.emplace(std::move(new_cell), Edges{});
     return it->first;
 }
 
 // TODO крч тут нужно пройтись по всем ячейкам кт участвуют в формуле cell_ptr
 //  и уничтожить их связь с этим удаленным cell_ptr (идея 10/10)
-void DependencyGraph::Delete(const std::shared_ptr<ICell>& cell_ptr) {
+void DependencyGraph::Delete(const std::shared_ptr<DefaultCell>& cell_ptr) {
     auto it = vertexes.find(cell_ptr);
     for (auto & el : it->second.incoming_ids) {
         auto & out_from_child = vertexes.find(incoming.at(el).to.lock())->second.outcoming_ids;
-        auto to_del = std::find(out_from_child.begin(), out_from_child.end(), [&](auto id) {
-            return outcoming[id].to == it->first;
+        auto to_del = std::find_if(out_from_child.begin(), out_from_child.end(), [&](auto id) {
+            return outcoming[id].to.lock() == it->first;
         });
         outcoming.erase(outcoming.begin() + *to_del);
         out_from_child.erase(to_del);
@@ -23,7 +23,7 @@ void DependencyGraph::Delete(const std::shared_ptr<ICell>& cell_ptr) {
     vertexes.erase(cell_ptr);
 }
 
-void DependencyGraph::AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<ICell> child_cell) {
+void DependencyGraph::AddEdge(std::shared_ptr<DefaultCell> par_cell, std::shared_ptr<DefaultCell> child_cell) {
     size_t edge_id = outcoming.size();
     outcoming.push_back({par_cell, child_cell});
     vertexes.at(par_cell).outcoming_ids.push_back(edge_id);
@@ -35,21 +35,21 @@ void DependencyGraph::AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<I
     //TODO проверка на ацикличность!
 }
 
-void DependencyGraph::InvalidIncoming(std::shared_ptr<ICell> cell_ptr) {
+void DependencyGraph::InvalidIncoming(std::shared_ptr<DefaultCell> cell_ptr) {
     auto it = vertexes.find(cell_ptr);
     if (it == vertexes.end())
         return;
 
-    auto formula_it = dynamic_cast<FormulaCell *>(it->first.get());
+    auto formula_it = it->first->GetFormula().get();
     if (formula_it){
-        formula_it->status = FormulaCell::Status::Invalid;
+        formula_it->status = DefaultFormula::Status::Invalid;
     }
 
     for (auto id : it->second.incoming_ids) {
         auto next_cell = vertexes.find(incoming.at(id).to.lock());
 
-        auto formula_cell = dynamic_cast<FormulaCell *>(next_cell->first.get());
-        if (formula_cell && formula_cell->status == FormulaCell::Status::Invalid){
+        auto formula_cell = it->first->GetFormula().get();
+        if (formula_cell && formula_cell->status == DefaultFormula::Status::Invalid){
             return;
         } else {
             InvalidIncoming(next_cell->first);
@@ -57,16 +57,16 @@ void DependencyGraph::InvalidIncoming(std::shared_ptr<ICell> cell_ptr) {
     }
 }
 
-void DependencyGraph::InvalidOutcoming(std::shared_ptr<ICell> cell_ptr) {
+void DependencyGraph::InvalidOutcoming(std::shared_ptr<DefaultCell> cell_ptr) {
     auto it = vertexes.find(cell_ptr);
     if (it == vertexes.end())
         return;
 
-    auto formula_it = dynamic_cast<FormulaCell *>(it->first.get());
-    if (formula_it && formula_it->status == FormulaCell::Status::Invalid) {
+    auto formula_it = it->first->GetFormula().get();
+    if (formula_it && formula_it->status == DefaultFormula::Status::Invalid) {
         return;
     } else if (formula_it) {
-        formula_it->status = FormulaCell::Status::Invalid;
+        formula_it->status = DefaultFormula::Status::Invalid;
     } else {
         return;
     }
@@ -74,7 +74,7 @@ void DependencyGraph::InvalidOutcoming(std::shared_ptr<ICell> cell_ptr) {
     for (auto id : it->second.outcoming_ids) {
         auto next_cell = vertexes.find(outcoming.at(id).to.lock());
 
-        auto formula_cell = dynamic_cast<FormulaCell *>(next_cell->first.get());
+        auto formula_cell = it->first->GetFormula().get();
         if (formula_cell){
             InvalidOutcoming(next_cell->first);
         }

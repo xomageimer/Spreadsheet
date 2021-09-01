@@ -7,8 +7,8 @@
 #include <unordered_map>
 
 struct Edge {
-    std::weak_ptr<ICell> from;
-    std::weak_ptr<ICell> to;
+    std::weak_ptr<struct DefaultCell> from;
+    std::weak_ptr<struct DefaultCell> to;
 };
 using EdgeID = size_t;
 struct Edges {
@@ -20,15 +20,15 @@ struct DependencyGraph {
 public:
     explicit DependencyGraph(ISheet & com_sheet) : sheet(com_sheet) {}
 
-    std::weak_ptr<ICell> AddVertex(std::shared_ptr<ICell> new_cell);
-    void AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<ICell> child_cell);
+    std::weak_ptr<struct DefaultCell> AddVertex(std::shared_ptr<struct DefaultCell> new_cell);
+    void AddEdge(std::shared_ptr<struct DefaultCell> par_cell, std::shared_ptr<struct DefaultCell> child_cell);
 
-    void Delete(const std::shared_ptr<ICell>& cell_ptr);
+    void Delete(const std::shared_ptr<struct DefaultCell>& cell_ptr);
 
-    void InvalidIncoming(std::shared_ptr<ICell> cell_ptr);
-    void InvalidOutcoming(std::shared_ptr<ICell> cell_ptr);
+    void InvalidIncoming(std::shared_ptr<struct DefaultCell> cell_ptr);
+    void InvalidOutcoming(std::shared_ptr<struct DefaultCell> cell_ptr);
 private:
-    std::unordered_map<std::shared_ptr<ICell>, Edges> vertexes;
+    std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;
     std::vector<Edge> outcoming;
     std::vector<Edge> incoming;
 

@@ -9,8 +9,10 @@
 #include "common.h"
 #include "formula.h"
 
-struct FormulaCell : public ICell, public IFormula {
-    FormulaCell(ICell::Value text_val, ISheet * sheet = nullptr);
+struct DefaultFormula : public IFormula {
+    explicit DefaultFormula(std::string const & val, const ISheet * sheet = nullptr);
+
+    Value GetValue() const override;
 
     IFormula::Value Evaluate(const ISheet& sheet) const override; // TODO не забыть менять статус // TODO добовлять в граф зависитмостей объекты
 
@@ -24,24 +26,27 @@ struct FormulaCell : public ICell, public IFormula {
     HandlingResult HandleDeletedRows(int first, int count = 1) override;
     HandlingResult HandleDeletedCols(int first, int count = 1) override;
 
-    [[nodiscard]] ICell::Value GetValue() const override;
-
-    [[nodiscard]] std::string GetText() const override;
-
+    friend std::unique_ptr<IFormula> ParseFormula(const std::string& expression);
 protected:
     mutable std::optional<AST::ASTree> as_tree;
-    ISheet * sheet_;
+    const ISheet * sheet_;
 
-    void BuildAST() const;
+    void BuildAST(std::string const & text) const;
 };
 
 struct DefaultCell : public ICell {
-    using ICell::ICell;
+    explicit DefaultCell(std::string const & text, ISheet const & sheet);
     [[nodiscard]] Value GetValue() const override;
 
     [[nodiscard]] std::string GetText() const override;
 
     [[nodiscard]] std::vector<Position> GetReferencedCells() const override;
+
+    [[nodiscard]] std::shared_ptr<IFormula> GetFormula() const {
+        return formula_;
+    }
+private:
+    std::shared_ptr<IFormula> formula_ = nullptr;
 };
 
 struct SpreadSheet : public ISheet {
@@ -66,7 +71,7 @@ public:
 
     DependencyGraph & GetGraph();
 private:
-    std::vector<std::vector<std::weak_ptr<ICell>>> cells {};
+    std::vector<std::vector<std::weak_ptr<DefaultCell>>> cells {};
     DependencyGraph dep_graph {*this};
 
     Size size {0, 0};

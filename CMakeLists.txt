@@ -10,7 +10,7 @@ if(MSVC)
 else()
   set(
     CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-implicit-fallthrough"
+    "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-unused-parameter -Wno-implicit-fallthrough"
   )
 endif()
 
@@ -39,7 +39,7 @@ file(GLOB sources
   *.h
 )
 
-set (sources ${sources} common.cpp formula.cpp Engine.cpp AST.cpp Graph.cpp)
+set (sources ${sources} common.cpp Engine.cpp AST.cpp Graph.cpp)
 
 add_executable(
   spreadsheet

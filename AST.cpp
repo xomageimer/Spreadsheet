@@ -11,7 +11,7 @@ std::string Cell::GetText() const {
 }
 
 // TODO в случае ошибки надо в Evaluate возвращать FormulaError
-double Cell::Evaluate() const {
+IFormula::Value Cell::Evaluate() const {
     auto cell = sheet_.GetCell(pos_);
     if (!cell)
         return 0;
@@ -35,8 +35,8 @@ void UnaryOp::SetValue(std::shared_ptr<const Node> node) {
     value_ = std::move(node);
 }
 
-double UnaryOp::Evaluate() const {
-    return (op_ == type::UN_SUB) ? -1 * value_->Evaluate() : value_->Evaluate();
+IFormula::Value UnaryOp::Evaluate() const {
+    return (op_ == type::UN_SUB) ? -1 * std::get<double>(value_->Evaluate()) : std::get<double>(value_->Evaluate());
 }
 
 std::string UnaryOp::GetText() const {
@@ -51,7 +51,7 @@ bool UnaryOp::is_brace_needed() const {
         default:
             return true;
     }
-};
+}
 
 BinaryOp::BinaryOp(char op) {
     switch (op) {
@@ -80,19 +80,26 @@ void BinaryOp::SetRight(std::shared_ptr<const Node> rhs_node) {
     right_ = std::move(rhs_node);
 }
 
-double BinaryOp::Evaluate() const {
+IFormula::Value BinaryOp::Evaluate() const {
+    auto lhs_val = left_->Evaluate();
+    auto rhs_val = right_->Evaluate();
+    if (std::holds_alternative<FormulaError>(lhs_val)) {
+        return FormulaError(std::get<FormulaError>(lhs_val));
+    } else if (std::holds_alternative<FormulaError>(rhs_val)) {
+        return FormulaError(std::get<FormulaError>(rhs_val));
+    }
+
     switch (op_) {
         case type::ADD:
-            return left_->Evaluate() + right_->Evaluate();
+            return std::get<double>(lhs_val) + std::get<double>(rhs_val);
         case type::SUB:
-            return left_->Evaluate() - right_->Evaluate();
+            return std::get<double>(lhs_val) - std::get<double>(rhs_val);
         case type::MUL:
-            return left_->Evaluate() * right_->Evaluate();
+            return std::get<double>(lhs_val) * std::get<double>(rhs_val);
         case type::DIV: {
-            auto right_val = right_->Evaluate();
-            if (!right_val)
-                throw FormulaError(FormulaError::Category::Div0);
-            return left_->Evaluate() / right_->Evaluate();
+            if (!std::get<double>(rhs_val))
+                return FormulaError(FormulaError::Category::Div0);
+            return std::get<double>(lhs_val) / std::get<double>(rhs_val);
         }
         default:
             throw std::logic_error("invalid value of the binary operator");
@@ -127,28 +134,45 @@ IFormula::Value ASTree::Evaluate() const {
     return root_->Evaluate();
 }
 
-void ASTree::MutateRows(int from, int count) {
+IFormula::HandlingResult ASTree::MutateRows(int from, int count) {
+    IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
+
     cells.clear();
     for (auto & cell : cell_ptrs) {
         auto pos = cell->GetPos();
-        if (pos.row > from) {
+        if (pos.row >= from) {
             cell->SetPos({pos.row + count, pos.col});
+            if (handle_type == IFormula::HandlingResult::NothingChanged){
+                handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
+            }
+        } else {
+            handle_type = IFormula::HandlingResult::ReferencesChanged;
         }
         cells.push_back(cell->GetPos());
     }
     std::sort(cells.begin(), cells.end());
+    return handle_type;
 }
 
-void ASTree::MutateCols(int from, int count) {
+// TODO при удалении надо как-то чтоле убирать значения
+IFormula::HandlingResult ASTree::MutateCols(int from, int count) {
+    IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
+
     cells.clear();
     for (auto & cell : cell_ptrs) {
         auto pos = cell->GetPos();
-        if (pos.col > from) {
+        if (pos.col >= from) {
             cell->SetPos({pos.row, pos.col + count});
+            if (handle_type == IFormula::HandlingResult::NothingChanged){
+                handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
+            }
+        } else {
+            handle_type = IFormula::HandlingResult::ReferencesChanged;
         }
         cells.push_back(cell->GetPos());
     }
     std::sort(cells.begin(), cells.end());
+    return handle_type;
 }
 
 void ASTListener::exitUnaryOp(FormulaParser::UnaryOpContext *op) {
@@ -220,7 +244,7 @@ void ASTListener::Pop(size_t count) {
     prior_ops.push(op);
 }
 
-ASTree ParseFormula(std::istream & in, const ISheet & sheet) {
+ASTree AST::ParseFormula(std::istream &in, const ISheet &sheet) {
     antlr4::ANTLRInputStream input(in);
 
     FormulaLexer lexer(&input);

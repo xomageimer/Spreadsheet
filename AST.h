@@ -33,7 +33,7 @@ namespace AST {
         ATOM
     };
     struct Node {
-        [[nodiscard]] virtual double Evaluate() const = 0;
+        [[nodiscard]] virtual IFormula::Value Evaluate() const = 0;
         [[nodiscard]] virtual std::string GetText() const = 0;
         [[nodiscard]] virtual type GetOpType() const {return op_;}
     protected:
@@ -61,7 +61,7 @@ namespace AST {
     struct Value : public Node {
     public:
         explicit Value(std::string const & number) : value_(std::stod(number)) { op_ = type::ATOM; }
-        [[nodiscard]] double Evaluate() const override { return value_; }
+        [[nodiscard]] IFormula::Value Evaluate() const override { return value_; }
         [[nodiscard]] std::string GetText() const override { return std::to_string(value_); };
     private:
         const double value_;
@@ -73,7 +73,7 @@ namespace AST {
             pos_ = Position::FromString(pos_str);
             op_ = type::ATOM;
         }
-        double Evaluate() const override;
+        [[nodiscard]] IFormula::Value Evaluate() const override;
         [[nodiscard]] std::string GetText() const override;
         [[nodiscard]] Position GetPos() const { return pos_; }
         void SetPos(Position new_pos) { pos_ = new_pos; }
@@ -87,7 +87,7 @@ namespace AST {
         explicit UnaryOp(char op);
         void SetValue(std::shared_ptr<const Node> node);
 
-        [[nodiscard]] double Evaluate() const override;
+        [[nodiscard]] IFormula::Value Evaluate() const override;
         [[nodiscard]] std::string GetText() const override;
     private:
         std::shared_ptr<const Node> value_;
@@ -107,7 +107,7 @@ namespace AST {
         void SetLeft(std::shared_ptr<const Node> lhs_node);
         void SetRight(std::shared_ptr<const Node> rhs_node);
 
-        [[nodiscard]] double Evaluate() const override;
+        [[nodiscard]] IFormula::Value Evaluate() const override;
         [[nodiscard]] std::string GetText() const override;
     private:
         std::shared_ptr<const Node> left_, right_;
@@ -128,8 +128,8 @@ namespace AST {
             return cells;
         }
 
-        void MutateRows(int from, int count);
-        void MutateCols(int from, int count);
+        IFormula::HandlingResult MutateRows(int from, int count);
+        IFormula::HandlingResult MutateCols(int from, int count);
     private:
         std::shared_ptr<const Node> root_;
         std::vector<std::shared_ptr<Cell>> cell_ptrs;

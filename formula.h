@@ -33,6 +33,7 @@ public:
 
   virtual ~IFormula() = default;
 
+  virtual Value GetValue() const = 0;
   // Возвращает вычисленное значение формулы для переданного листа, либо ошибку.
   // Если вычисление какой-то из указанных в формуле ячеек приводит к ошибке, то
   // возвращается именно эта ошибка. Если таких ошибок несколько, возвращается
@@ -70,4 +71,4 @@ protected:
 
 // Парсит переданное выражение и возвращает объект формулы.
 // Бросает FormulaException в случае если формула синтаксически некорректна.
-std::unique_ptr<IFormula> ParseFormula(std::string expression);
+std::unique_ptr<IFormula> ParseFormula(const std::string& expression);
