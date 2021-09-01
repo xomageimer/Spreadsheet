@@ -65,8 +65,6 @@ public:
   virtual HandlingResult HandleDeletedRows(int first, int count = 1) = 0;
   virtual HandlingResult HandleDeletedCols(int first, int count = 1) = 0;
 protected:
-    std::vector<std::weak_ptr<ICell>> used_cells;
-    std::vector<Position> pos_of_used_cells;
     mutable Value evaluated_value;
 };
 

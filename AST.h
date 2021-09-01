@@ -1,10 +1,166 @@
 #ifndef SPREADSHEET_AST_H
 #define SPREADSHEET_AST_H
 
+#include <utility>
+#include <stack>
+
+#include "common.h"
+#include "formula.h"
+
+#include "FormulaLexer.h"
 #include "FormulaBaseListener.h"
+#include "FormulaParser.h"
 
+class BailErrorListener : public antlr4::BaseErrorListener {
+public:
+    void syntaxError(antlr4::Recognizer* /* recognizer */,
+                     antlr4::Token* /* offendingSymbol */, size_t /* line */,
+                     size_t /* charPositionInLine */, const std::string& msg,
+                     std::exception_ptr /* e */
+    ) override {
+        throw std::runtime_error("Error when lexing: " + msg);
+    }
+};
+
+enum type {
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+    UN_ADD,
+    UN_SUB,
+    ATOM
+};
 struct Node {
+    [[nodiscard]] virtual double Evaluate() const = 0;
+    [[nodiscard]] virtual std::string GetText() const = 0;
+    [[nodiscard]] virtual type GetOpType() const {return op_;}
+protected:
+    type op_;
+};
 
+struct ASTListener final : public FormulaBaseListener {
+public:
+    explicit ASTListener(const ISheet & sheet) : sheet_(sheet) {}
+    void exitUnaryOp(FormulaParser::UnaryOpContext * op/*ctx*/) override {
+
+    }
+
+    void exitParens(FormulaParser::ParensContext * /*ctx*/) override {
+
+    }
+
+    void exitCell(FormulaParser::CellContext * cell/*ctx*/) override {
+
+    }
+
+    void exitLiteral(FormulaParser::LiteralContext * num /*ctx*/) override {
+
+    }
+
+    void exitBinaryOp(FormulaParser::BinaryOpContext * op /*ctx*/) override {
+
+    }
+private:
+    const ISheet & sheet_;
+    std::stack<std::shared_ptr<Node>> prior_ops;
+};
+
+
+enum class NeedOfBrackets {
+    NO_NEED = 0b00,
+    RIGHT = 0b01,
+    LEFT = 0b10,
+    BOTH = RIGHT | LEFT
+};
+using nob = NeedOfBrackets;
+
+static const NeedOfBrackets table_of_necessity [type::ATOM + 1][type::ATOM + 1]{
+        {nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED}, // . + .
+        {nob::RIGHT, nob::RIGHT, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED},     // . - .
+        {nob::BOTH, nob::BOTH, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED},       // . * .
+        {nob::BOTH, nob::BOTH, nob::RIGHT, nob::RIGHT, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED},           // ./.
+        {nob::BOTH, nob::BOTH, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED},       // +.
+        {nob::BOTH, nob::BOTH, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED},       // -.
+        {nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED, nob::NO_NEED}  // ATOM
+};
+
+struct Value : public Node {
+public:
+    explicit Value(std::string const & number) : value_(std::stod(number)) { op_ = type::ATOM; }
+    [[nodiscard]] double Evaluate() const override { return value_; }
+    [[nodiscard]] std::string GetText() const override { return std::to_string(value_); };
+private:
+    const double value_;
+};
+
+struct Cell : public Node {
+public:
+    explicit Cell(std::string const & pos_str, ISheet const & sheet) : sheet_(sheet) {
+        pos_ = Position::FromString(pos_str);
+        op_ = type::ATOM;
+    }
+    double Evaluate() const override;
+    [[nodiscard]] std::string GetText() const override;
+    [[nodiscard]] Position GetPos() const { return pos_; }
+    void SetPos(Position new_pos) { pos_ = new_pos; }
+private:
+    Position pos_;
+    const ISheet & sheet_;
+};
+
+struct UnaryOp : public Node {
+public:
+    explicit UnaryOp(char op);
+    void SetValue(std::shared_ptr<const Node> node);
+
+    [[nodiscard]] double Evaluate() const override;
+    [[nodiscard]] std::string GetText() const override;
+private:
+    std::shared_ptr<const Node> value_;
+    [[nodiscard]] bool is_brace_needed() const;
+};
+
+struct BinaryOp : public Node {
+public:
+    static const inline std::map<type, std::string> sign{
+            {type::ADD, "+"},
+            {type::SUB, "-"},
+            {type::MUL, "*"},
+            {type::DIV, "/"}
+    };
+
+    explicit BinaryOp(char op);
+    void SetLeft(std::shared_ptr<const Node> lhs_node);
+    void SetRight(std::shared_ptr<const Node> rhs_node);
+
+    [[nodiscard]] double Evaluate() const override;
+    [[nodiscard]] std::string GetText() const override;
+private:
+    std::shared_ptr<const Node> left_, right_;
+    [[nodiscard]] bool is_brace_needed() const;
+};
+
+struct ASTree {
+public:
+    explicit ASTree(std::shared_ptr<const Node> root_node, std::vector<std::shared_ptr<Cell>> ptrs) : root_(std::move(root_node)), cell_ptrs(std::move(ptrs)) {
+        for (auto & cell : cell_ptrs) {
+            cells.push_back(cell->GetPos());
+        }
+        std::sort(cells.begin(), cells.end());
+    }
+    [[nodiscard]] std::string GetExpression() const { return root_->GetText(); }
+    [[nodiscard]] double Evaluate() const;
+    [[nodiscard]] std::vector<Position> GetCells() const {
+        return cells;
+    }
+
+    void MutateRows(int from, int count);
+    void MutateCols(int from, int count);
+private:
+    std::shared_ptr<const Node> root_;
+    std::vector<std::shared_ptr<Cell>> cell_ptrs;
+    std::vector<Position> cells;
 };
 
 

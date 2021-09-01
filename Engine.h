@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "Graph.h"
+#include "AST.h"
 #include "common.h"
 #include "formula.h"
 
@@ -28,6 +29,7 @@ struct FormulaCell : public ICell, public IFormula {
     [[nodiscard]] std::string GetText() const override;
 
 protected:
+    std::optional<ASTree> as_tree;
     ISheet * sheet_;
 };
 

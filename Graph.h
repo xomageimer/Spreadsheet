@@ -21,8 +21,10 @@ public:
     explicit DependencyGraph(ISheet & com_sheet) : sheet(com_sheet) {}
 
     std::weak_ptr<ICell> AddVertex(std::shared_ptr<ICell> new_cell);
-    EdgeID AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<ICell> child_cell);
+    void AddEdge(std::shared_ptr<ICell> par_cell, std::shared_ptr<ICell> child_cell);
+
     void Delete(const std::shared_ptr<ICell>& cell_ptr);
+
     void InvalidIncoming(std::shared_ptr<ICell> cell_ptr);
     void InvalidOutcoming(std::shared_ptr<ICell> cell_ptr);
 private:
