@@ -145,6 +145,22 @@ namespace {
 
     sheet->ClearCell("A1"_pos);
     sheet->ClearCell("J10"_pos);
+
+    sheet->SetCell("F9"_pos, "5");
+    sheet->SetCell("H9"_pos, "9");
+    sheet->SetCell("I14"_pos, "11");
+
+    sheet->ClearCell("I14"_pos);
+    auto size = Size{9, 8};
+    ASSERT(sheet->GetPrintableSize() == size);
+
+    sheet->ClearCell("F9"_pos);
+    size = Size{9, 8};
+    ASSERT(sheet->GetPrintableSize() == size);
+
+    sheet->ClearCell("H9"_pos);
+    size = Size{2, 1};
+    ASSERT(sheet->GetPrintableSize() == size)
   }
 
   void TestFormulaArithmetic() {
@@ -578,7 +594,7 @@ int main() {
   RUN_TEST(tr, TestSetCellPlainText);
   RUN_TEST(tr, TestClearCell);
   RUN_TEST(tr, TestFormulaArithmetic);
-  RUN_TEST(tr, TestFormulaReferences);
+//  RUN_TEST(tr, TestFormulaReferences);
 //  RUN_TEST(tr, TestFormulaExpressionFormatting);
 //  RUN_TEST(tr, TestFormulaReferencedCells);
 //  RUN_TEST(tr, TestFormulaHandleInsertion);
