@@ -331,9 +331,34 @@ DependencyGraph &SpreadSheet::GetGraph() {
 }
 
 void SpreadSheet::PrintValues(std::ostream &output) const {
-
+    for (int i = 0; i < size.rows; i++){
+        bool is_first = true;
+        for (int j = 0; j < size.cols; j++) {
+            if (!is_first)
+                output << '\t';
+            is_first = false;
+            if (auto cell = GetCell({i, j}); cell) {
+                if (std::holds_alternative<double>(cell->GetValue()))
+                    output << std::get<double>(cell->GetValue());
+                else
+                    output << std::get<std::string>(cell->GetValue());
+            }
+        }
+        output << '\n';
+    }
 }
 
 void SpreadSheet::PrintTexts(std::ostream &output) const {
-
+    for (int i = 0; i < size.rows; i++){
+        bool is_first = true;
+        for (int j = 0; j < size.cols; j++) {
+            if (!is_first)
+                output << '\t';
+            is_first = false;
+            if (auto cell = GetCell({i, j}); cell) {
+                output << cell->GetText();
+            }
+        }
+        output << '\n';
+    }
 }

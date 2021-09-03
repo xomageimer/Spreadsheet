@@ -18,17 +18,8 @@ IFormula::Value Cell::Evaluate() const {
     return std::get<double>(sheet_.GetCell(pos_)->GetValue());
 }
 
-UnaryOp::UnaryOp(char op) {
-    switch (op) {
-        case '+' :
-            op_ = type::UN_ADD;
-            break;
-        case '-' :
-            op_ = type::UN_SUB;
-            break;
-        default :
-            throw std::logic_error("invalid value of the unary operator");
-    }
+UnaryOp::UnaryOp(type op) {
+    op_ = op;
 }
 
 void UnaryOp::SetValue(std::shared_ptr<const Node> node) {

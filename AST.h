@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <stack>
+#include <sstream>
 
 #include "common.h"
 #include "formula.h"
@@ -62,7 +63,12 @@ namespace AST {
     public:
         explicit Value(std::string const & number) : value_(std::stod(number)) { op_ = type::ATOM; }
         [[nodiscard]] IFormula::Value Evaluate() const override { return value_; }
-        [[nodiscard]] std::string GetText() const override { return std::to_string(value_); };
+        [[nodiscard]] std::string GetText() const override
+        {
+            std::ostringstream ss;
+            ss << value_;
+            return ss.str();
+        };
     private:
         const double value_;
     };
@@ -84,7 +90,7 @@ namespace AST {
 
     struct UnaryOp : public Node {
     public:
-        explicit UnaryOp(char op);
+        explicit UnaryOp(type op);
         void SetValue(std::shared_ptr<const Node> node);
 
         [[nodiscard]] IFormula::Value Evaluate() const override;
