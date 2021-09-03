@@ -139,6 +139,7 @@ namespace {
     auto sheet = CreateSheet();
 
     sheet->SetCell("C2"_pos, "Me gusta");
+    sheet->SetCell("A2"_pos, "Nigger");
     sheet->ClearCell("C2"_pos);
     ASSERT(sheet->GetCell("C2"_pos) == nullptr);
 
@@ -573,11 +574,11 @@ int main() {
   RUN_TEST(tr, TestPositionToStringInvalid);
   RUN_TEST(tr, TestStringToPositionInvalid);
   RUN_TEST(tr, TestEmpty);
-//  RUN_TEST(tr, TestInvalidPosition);
-//  RUN_TEST(tr, TestSetCellPlainText);
-//  RUN_TEST(tr, TestClearCell);
-//  RUN_TEST(tr, TestFormulaArithmetic);
-//  RUN_TEST(tr, TestFormulaReferences);
+  RUN_TEST(tr, TestInvalidPosition);
+  RUN_TEST(tr, TestSetCellPlainText);
+  RUN_TEST(tr, TestClearCell);
+  RUN_TEST(tr, TestFormulaArithmetic);
+  RUN_TEST(tr, TestFormulaReferences);
 //  RUN_TEST(tr, TestFormulaExpressionFormatting);
 //  RUN_TEST(tr, TestFormulaReferencedCells);
 //  RUN_TEST(tr, TestFormulaHandleInsertion);

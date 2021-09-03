@@ -47,6 +47,7 @@ struct Size {
   int cols = 0;
 
   bool operator==(const Size& rhs) const;
+  operator bool() const;
 };
 bool operator<(const Size & lhs, const Position & rhs);
 bool operator<(const Position & lhs, const Size & rhs);

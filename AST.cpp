@@ -53,23 +53,8 @@ bool UnaryOp::is_brace_needed() const {
     }
 }
 
-BinaryOp::BinaryOp(char op) {
-    switch (op) {
-        case '+' :
-            op_ = type::ADD;
-            break;
-        case '-' :
-            op_ = type::SUB;
-            break;
-        case '*' :
-            op_ = type::MUL;
-            break;
-        case '/' :
-            op_ = type::DIV;
-            break;
-        default:
-            throw std::logic_error("invalid value of the binary operator");
-    }
+BinaryOp::BinaryOp(type op) {
+    op_ = op;
 }
 
 void BinaryOp::SetLeft(std::shared_ptr<const Node> lhs_node) {

@@ -103,7 +103,7 @@ namespace AST {
                 {type::DIV, "/"}
         };
 
-        explicit BinaryOp(char op);
+        explicit BinaryOp(type op);
         void SetLeft(std::shared_ptr<const Node> lhs_node);
         void SetRight(std::shared_ptr<const Node> rhs_node);
 

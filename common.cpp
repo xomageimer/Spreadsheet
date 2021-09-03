@@ -42,7 +42,7 @@ Position Position::FromString(std::string_view str) {
 
 std::string Position::ToString() const {
     if (!IsValid())
-        throw std::logic_error("Invalid position status");
+        return {};
 
     std::string index;
     int c = col;
@@ -61,7 +61,7 @@ bool Position::IsValid() const {
         try {
             CheckPosException(col >= 0 && row >= 0);
             CheckPosException(col < kMaxCols && row < kMaxRows);
-        } catch (...){
+        } catch (...) {
             status = STATUS::ERROR;
         }
     }
@@ -80,12 +80,16 @@ bool Size::operator==(const Size &rhs) const {
     return rows == rhs.rows && cols == rhs.cols;
 }
 
+Size::operator bool() const {
+    return cols != 0 && rows != 0;
+}
+
 bool operator<(const Size &lhs, const Position &rhs) {
-    return lhs.rows < rhs.row || (lhs.rows == rhs.row && lhs.cols < rhs.col);
+    return lhs.rows < rhs.row + 1 || (lhs.rows == rhs.row + 1 && lhs.cols < rhs.col + 1);
 }
 
 bool operator<(const Position &lhs, const Size &rhs) {
-    return lhs.row < rhs.rows || (lhs.row == rhs.rows && lhs.col < rhs.cols);
+    return lhs.row < rhs.rows && lhs.col < rhs.cols;
 }
 
 bool operator>(const Size &lhs, const Position &rhs) {

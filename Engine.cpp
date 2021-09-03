@@ -119,21 +119,28 @@ void DefaultFormula::BuildAST(std::string const & text) const {
 
 // TODO мб обработку исключения TableTooBigException надо вынести отдельно, дабы избежать копипасты
 void SpreadSheet::SetCell(Position pos, std::string text) {
-    if (size < pos){
-        if (pos.row > size.rows) {
+    if (!pos.IsValid())
+        throw InvalidPositionException("invalid pos");
+
+    if (!size || size < pos){
+        if (!size.rows || pos.row >= size.rows) {
             if (size.rows == Position::kMaxRows)
                 throw TableTooBigException("The number of rows is greater/equal than the maximum");
 
+            size_t i = size.rows;
             size.rows = pos.row + 1;
-            cells.resize(pos.row);
+            cells.resize(size.rows);
+            for (int j = i; j < size.rows; j++){
+                cells[j].resize(size.cols);
+            }
         }
-        if (pos.col > size.cols) {
+        if (!size.cols || pos.col >= size.cols) {
             if (size.cols == Position::kMaxCols)
                 throw TableTooBigException("The number of cols is greater/equal than the maximum");
 
             size.cols = pos.col + 1;
             for (auto &cols : cells) {
-                cols.resize(pos.col);
+                cols.resize(size.cols);
             }
         }
     }
@@ -151,59 +158,62 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 }
 
 const ICell *SpreadSheet::GetCell(Position pos) const {
+    if (!pos.IsValid())
+        throw InvalidPositionException("invalid pos");
+
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
         return nullptr;
-
     return cells.at(pos.row).at(pos.col).lock().get();
 }
 
 ICell *SpreadSheet::GetCell(Position pos) {
+    if (!pos.IsValid())
+        throw InvalidPositionException("invalid pos");
+
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
         return nullptr;
-
     return cells.at(pos.row).at(pos.col).lock().get();
 }
 
 void SpreadSheet::ClearCell(Position pos) {
-    if (!(size < pos))
-        return;
+    if (!pos.IsValid())
+        throw InvalidPositionException("invalid pos");
 
-    if (pos.col == size.cols - 1) {
-        int max_pos = pos.col;
-        for (int j = 0; j < static_cast<int>(size.rows); j++) {
-            for (int i = pos.col; i >= 0; i--) {
-                if (!cells[j][i].expired() && (pos.row != j && pos.col != i)){
-                    max_pos = i;
-                    break;
-                }
-            }
-            if (max_pos != pos.col)
-                break;
-        }
-        for (auto & raw : cells) {
-            raw.erase(raw.begin() + max_pos, raw.end());
-        }
-        size.rows = max_pos;
-    }
-    if (pos.row == size.rows - 1) {
-        int max_pos = pos.row;
-        for (int j = pos.row; j >= 0; j--){
-            for (int i = 0; i < static_cast<int>(size.cols); i++){
-                if (!cells[i][j].expired() && (pos.row != j && pos.col != i)) {
-                    max_pos = j;
-                    break;
-                }
-            }
-            if (max_pos != pos.row)
-                break;
-        }
-        cells.erase(cells.begin() + max_pos, cells.end());
-        size.cols = max_pos;
-    }
+    if (!(size > pos))
+        return;
 
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
         dep_graph.Delete(cell.lock());
+    }
+
+    if (pos.col == size.cols - 1) {
+        std::optional<int> max_pos;
+        for (int i = pos.col; i >= 0; i--) {
+            for (int j = 0; j < static_cast<int>(size.rows); j++) {
+                if (!cells[j][i].expired() && (!max_pos || i > max_pos.value())) {
+                    max_pos.emplace(i);
+                    break;
+                }
+            }
+        }
+        for (auto & raw : cells) {
+            raw.erase(raw.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), raw.end());
+        }
+        size.cols = (!max_pos) ? 0 : (*max_pos + 1);
+    }
+    if (pos.row == size.rows - 1) {
+        std::optional<int> max_pos;
+        for (int j = size.rows - 1; j >= 0; j--){
+            for (int i = 0; i < static_cast<int>(size.cols); i++){
+                if (!cells[j][i].expired() && (!max_pos || j > max_pos.value())) {
+                    max_pos.emplace(j);
+                    break;
+                }
+            }
+        }
+        cells.erase(cells.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), cells.end());
+        size.rows = (!max_pos) ? 0 : (*max_pos + 1);
     }
 }
 
