@@ -47,6 +47,8 @@ struct DefaultCell : public ICell {
     }
 private:
     std::shared_ptr<IFormula> formula_ = nullptr;
+
+    bool AllIsDigits(std::string const & str);
 };
 
 struct SpreadSheet : public ISheet {

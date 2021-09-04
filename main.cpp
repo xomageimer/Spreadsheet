@@ -87,6 +87,7 @@ namespace {
     ASSERT(!Position::FromString("XFE16384").IsValid());
     ASSERT(!Position::FromString("A1234567890123456789").IsValid());
     ASSERT(!Position::FromString("ABCDEFGHIJKLMNOPQRS8").IsValid());
+    ASSERT(!Position::FromString("X0").IsValid());
   }
 
   void TestEmpty() {
@@ -594,16 +595,16 @@ int main() {
   RUN_TEST(tr, TestSetCellPlainText);
   RUN_TEST(tr, TestClearCell);
   RUN_TEST(tr, TestFormulaArithmetic);
-//  RUN_TEST(tr, TestFormulaReferences);
-//  RUN_TEST(tr, TestFormulaExpressionFormatting);
-//  RUN_TEST(tr, TestFormulaReferencedCells);
+  RUN_TEST(tr, TestFormulaReferences);
+  RUN_TEST(tr, TestFormulaExpressionFormatting);
+  RUN_TEST(tr, TestFormulaReferencedCells);
 //  RUN_TEST(tr, TestFormulaHandleInsertion);
 //  RUN_TEST(tr, TestInsertionOverflow);
 //  RUN_TEST(tr, TestFormulaHandleDeletion);
 //  RUN_TEST(tr, TestErrorValue);
-//  RUN_TEST(tr, TestErrorDiv0);
-//  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
-//  RUN_TEST(tr, TestFormulaInvalidPosition);
+  RUN_TEST(tr, TestErrorDiv0);
+  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
+  RUN_TEST(tr, TestFormulaInvalidPosition);
 //  RUN_TEST(tr, TestCellErrorPropagation);
 //  RUN_TEST(tr, TestCellsDeletionSimple);
 //  RUN_TEST(tr, TestCellsDeletion);

@@ -34,8 +34,8 @@ namespace AST {
         ATOM
     };
     struct Node {
-        [[nodiscard]] virtual IFormula::Value Evaluate() const = 0;
-        [[nodiscard]] virtual std::string GetText() const = 0;
+        [[nodiscard]] virtual IFormula::Value Evaluate(const ISheet &) const = 0;
+        [[nodiscard]] virtual std::string GetText(const ISheet &) const = 0;
         [[nodiscard]] virtual type GetOpType() const {return op_;}
     protected:
         type op_;
@@ -62,30 +62,24 @@ namespace AST {
     struct Value : public Node {
     public:
         explicit Value(std::string const & number) : value_(std::stod(number)) { op_ = type::ATOM; }
-        [[nodiscard]] IFormula::Value Evaluate() const override { return value_; }
-        [[nodiscard]] std::string GetText() const override
-        {
-            std::ostringstream ss;
-            ss << value_;
-            return ss.str();
-        };
+        [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const override { return value_; }
+        [[nodiscard]] std::string GetText(const ISheet &) const override;
     private:
         const double value_;
     };
 
     struct Cell : public Node {
     public:
-        explicit Cell(std::string const & pos_str, ISheet const & sheet) : sheet_(sheet) {
+        explicit Cell(std::string const & pos_str) {
             pos_ = Position::FromString(pos_str);
             op_ = type::ATOM;
         }
-        [[nodiscard]] IFormula::Value Evaluate() const override;
-        [[nodiscard]] std::string GetText() const override;
+        [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const override;
+        [[nodiscard]] std::string GetText(const ISheet &) const override;
         [[nodiscard]] Position GetPos() const { return pos_; }
         void SetPos(Position new_pos) { pos_ = new_pos; }
     private:
         Position pos_;
-        const ISheet & sheet_;
     };
 
     struct UnaryOp : public Node {
@@ -93,8 +87,8 @@ namespace AST {
         explicit UnaryOp(type op);
         void SetValue(std::shared_ptr<const Node> node);
 
-        [[nodiscard]] IFormula::Value Evaluate() const override;
-        [[nodiscard]] std::string GetText() const override;
+        [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const override;
+        [[nodiscard]] std::string GetText(const ISheet &) const override;
     private:
         std::shared_ptr<const Node> value_;
         [[nodiscard]] bool is_brace_needed() const;
@@ -113,11 +107,12 @@ namespace AST {
         void SetLeft(std::shared_ptr<const Node> lhs_node);
         void SetRight(std::shared_ptr<const Node> rhs_node);
 
-        [[nodiscard]] IFormula::Value Evaluate() const override;
-        [[nodiscard]] std::string GetText() const override;
+        [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const override;
+        [[nodiscard]] std::string GetText(const ISheet &) const override;
     private:
         std::shared_ptr<const Node> left_, right_;
-        [[nodiscard]] bool is_brace_needed() const;
+        [[nodiscard]] bool is_brace_needed_left() const;
+        [[nodiscard]] bool is_brace_needed_right() const;
     };
 
     struct ASTree {
@@ -127,9 +122,10 @@ namespace AST {
                 cells.push_back(cell->GetPos());
             }
             std::sort(cells.begin(), cells.end());
+            cells.erase(std::unique(cells.begin(), cells.end()), cells.end());
         }
-        [[nodiscard]] std::string GetExpression() const { return root_->GetText(); }
-        [[nodiscard]] IFormula::Value Evaluate() const;
+        [[nodiscard]] std::string GetExpression(const ISheet & sheet) const { return root_->GetText(sheet); }
+        [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const;
         [[nodiscard]] std::vector<Position> GetCells() const {
             return cells;
         }
@@ -144,7 +140,7 @@ namespace AST {
 
     struct ASTListener final : public FormulaBaseListener {
     public:
-        explicit ASTListener(const ISheet & sheet) : sheet_(&sheet) {}
+        explicit ASTListener() = default;
 
         void exitUnaryOp(FormulaParser::UnaryOpContext * op/*ctx*/) override;
         void exitCell(FormulaParser::CellContext * cell/*ctx*/) override;
@@ -153,8 +149,6 @@ namespace AST {
 
         [[nodiscard]] ASTree Build() const;
     private:
-        const ISheet * sheet_;
-
         std::stack<std::shared_ptr<Node>> prior_ops;
         std::vector<std::shared_ptr<Cell>> cells;
 

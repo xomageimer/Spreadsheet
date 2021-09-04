@@ -32,9 +32,18 @@ std::vector<Position> DefaultCell::GetReferencedCells() const {
 DefaultCell::DefaultCell(const std::string &text, ISheet const & sheet) : ICell(ICell::Value(text)) {
     if (text.size() > 1 && text.front() == '='){
         formula_ = std::make_shared<DefaultFormula>(text.substr(1), &sheet);
+    } else if (AllIsDigits(text)) {
+        if (!text.empty())
+            ICell::value = ICell::Value(std::stod(text));
+        else ICell::value = 0;
     }
 }
 
+bool DefaultCell::AllIsDigits(const std::string &str) {
+    return std::all_of(str.begin(), str.end(), [](auto c) {
+        return std::isdigit(c);
+    });
+}
 
 
 DefaultFormula::DefaultFormula(std::string const & val, const ISheet * sheet) : sheet_(sheet) {
@@ -59,7 +68,7 @@ std::vector<Position> DefaultFormula::GetReferencedCells() const {
 }
 
 std::string DefaultFormula::GetExpression() const {
-    return as_tree->GetExpression();
+    return as_tree->GetExpression(*sheet_);
 }
 
 IFormula::Value DefaultFormula::Evaluate(const ISheet &sheet) const {
@@ -68,7 +77,7 @@ IFormula::Value DefaultFormula::Evaluate(const ISheet &sheet) const {
 
     IFormula::Value val;
     try {
-        val = as_tree->Evaluate();
+        val = as_tree->Evaluate(sheet);
         status = Status::Valid;
     } catch (FormulaError & fe) {
         status = Status::Error;
