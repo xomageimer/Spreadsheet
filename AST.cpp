@@ -21,6 +21,9 @@ std::string Cell::GetText(const ISheet & sheet) const {
 // TODO в случае ошибки надо в Evaluate возвращать FormulaError
 IFormula::Value Cell::Evaluate(const ISheet & sheet) const {
     auto cell = sheet.GetCell(pos_);
+    if (std::holds_alternative<std::string>(cell->GetValue())){
+        return FormulaError::Category::Value;
+    }
     if (!cell)
         return 0;
     return std::get<double>(sheet.GetCell(pos_)->GetValue());
