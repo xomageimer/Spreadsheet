@@ -137,6 +137,48 @@ protected:
 inline constexpr char kFormulaSign = '=';
 inline constexpr char kEscapeSign = '\'';
 
+struct ProxyCell {
+public:
+    explicit ProxyCell(ICell * c);
+    ICell * operator->() {
+        if (cell)
+            return cell;
+        return default_value.get();
+    }
+    ICell & operator*(){
+        if (cell){
+            return *cell;
+        }
+        return *default_value;
+    }
+    ICell * operator->() const {
+        if (cell)
+            return cell;
+        return default_value.get();
+    }
+    ICell & operator*() const{
+        if (cell){
+            return *cell;
+        }
+        return *default_value;
+    }
+    operator bool() const{
+        return cell;
+    }
+    bool operator==(void* ptr) const{
+        return cell == ptr;
+    }
+    bool operator!=(void * ptr) const{
+        return cell != ptr;
+    }
+    operator ICell*() const{
+        return cell;
+    }
+private:
+    ICell * cell = nullptr;
+    std::shared_ptr<ICell> default_value;
+};
+
 // Интерфейс таблицы
 class ISheet {
 public:
@@ -159,8 +201,8 @@ public:
 
   // Возвращает значение ячейки.
   // Если ячейка пуста, может вернуть nullptr.
-  virtual const ICell* GetCell(Position pos) const = 0;
-  virtual ICell* GetCell(Position pos) = 0;
+  virtual const ProxyCell GetCell(Position pos) const = 0;
+  virtual ProxyCell GetCell(Position pos) = 0;
 
   // Очищает ячейку.
   // Последующий вызов GetCell() для этой ячейки вернёт либо nullptr, либо

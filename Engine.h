@@ -35,7 +35,7 @@ protected:
 };
 
 struct DefaultCell : public ICell {
-    explicit DefaultCell(std::string const & text, ISheet const & sheet);
+    explicit DefaultCell(std::string const & text, ISheet const * sheet = nullptr);
     [[nodiscard]] Value GetValue() const override;
 
     [[nodiscard]] std::string GetText() const override;
@@ -55,8 +55,8 @@ struct SpreadSheet : public ISheet {
 public:
     void SetCell(Position pos, std::string text) override;
 
-    const ICell* GetCell(Position pos) const override;
-    ICell* GetCell(Position pos) override;
+    const ProxyCell GetCell(Position pos) const override;
+    ProxyCell GetCell(Position pos) override;
 
     void ClearCell(Position pos) override;
 

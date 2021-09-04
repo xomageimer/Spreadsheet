@@ -1,4 +1,5 @@
 #include "common.h"
+#include "Engine.h"
 
 #include <algorithm>
 
@@ -134,3 +135,5 @@ std::ostream &operator<<(std::ostream &output, FormulaError fe) {
 std::unique_ptr<ISheet> CreateSheet() {
     return std::make_unique<SpreadSheet>();
 }
+
+ProxyCell::ProxyCell(ICell *c) : cell(c), default_value(std::make_shared<DefaultCell>("")) {}

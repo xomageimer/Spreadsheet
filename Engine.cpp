@@ -29,9 +29,9 @@ std::vector<Position> DefaultCell::GetReferencedCells() const {
     return std::vector<Position>{};
 }
 
-DefaultCell::DefaultCell(const std::string &text, ISheet const & sheet) : ICell(ICell::Value(text)) {
+DefaultCell::DefaultCell(const std::string &text, ISheet const * sheet) : ICell(ICell::Value(text)) {
     if (text.size() > 1 && text.front() == '='){
-        formula_ = std::make_shared<DefaultFormula>(text.substr(1), &sheet);
+        formula_ = std::make_shared<DefaultFormula>(text.substr(1), sheet);
     } else if (AllIsDigits(text)) {
         if (!text.empty())
             ICell::value = ICell::Value(std::stod(text));
@@ -128,8 +128,9 @@ void DefaultFormula::BuildAST(std::string const & text) const {
 
 // TODO мб обработку исключения TableTooBigException надо вынести отдельно, дабы избежать копипасты
 void SpreadSheet::SetCell(Position pos, std::string text) {
-    if (!pos.IsValid())
+    if (!pos.IsValid()) {
         throw InvalidPositionException("invalid pos");
+    }
 
     if (!size || size < pos){
         if (!size.rows || pos.row >= size.rows) {
@@ -162,26 +163,26 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     }
 
    // TODO проверять при создании корректность позиции ячейки, остальные ошибки формулы проверять при вычислениях
-    auto val = std::make_shared<DefaultCell>(text, *this); // TODO если текст можно трактовать как число, то хранить в Value число
+    auto val = std::make_shared<DefaultCell>(text, this); // TODO если текст можно трактовать как число, то хранить в Value число
     cells[pos.row][pos.col] = dep_graph.AddVertex(val);
 }
 
-const ICell *SpreadSheet::GetCell(Position pos) const {
+const ProxyCell SpreadSheet::GetCell(Position pos) const {
     if (!pos.IsValid())
         throw InvalidPositionException("invalid pos");
 
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
-        return nullptr;
-    return cells.at(pos.row).at(pos.col).lock().get();
+        return ProxyCell{nullptr};
+    return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
 }
 
-ICell *SpreadSheet::GetCell(Position pos) {
+ProxyCell SpreadSheet::GetCell(Position pos) {
     if (!pos.IsValid())
         throw InvalidPositionException("invalid pos");
 
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
-        return nullptr;
-    return cells.at(pos.row).at(pos.col).lock().get();
+        return ProxyCell{nullptr};
+    return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
 }
 
 void SpreadSheet::ClearCell(Position pos) {

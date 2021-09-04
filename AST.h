@@ -71,8 +71,10 @@ namespace AST {
     struct Cell : public Node {
     public:
         explicit Cell(std::string const & pos_str) {
-            pos_ = Position::FromString(pos_str);
             op_ = type::ATOM;
+            pos_ = Position::FromString(pos_str);
+            if (!pos_.IsValid())
+                throw FormulaException("invalid pos");
         }
         [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const override;
         [[nodiscard]] std::string GetText(const ISheet &) const override;

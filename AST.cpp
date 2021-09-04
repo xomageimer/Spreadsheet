@@ -261,16 +261,20 @@ ASTree AST::ParseFormula(std::istream &in, const ISheet &sheet) {
         throw FormulaException("Invalid formula");
     }
 
-    antlr4::CommonTokenStream tokens(&lexer);
-
-    FormulaParser parser(&tokens);
-    auto error_handler = std::make_shared<antlr4::BailErrorStrategy>();
-    parser.setErrorHandler(error_handler);
-    parser.removeErrorListeners();
-
-    antlr4::tree::ParseTree *tree = parser.main();  // метод соответствует корневому правилу
     ASTListener listener;
-    antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+    try {
+        antlr4::CommonTokenStream tokens(&lexer);
+
+        FormulaParser parser(&tokens);
+        auto error_handler = std::make_shared<antlr4::BailErrorStrategy>();
+        parser.setErrorHandler(error_handler);
+        parser.removeErrorListeners();
+
+        antlr4::tree::ParseTree *tree = parser.main();  // метод соответствует корневому правилу
+        antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+    } catch (...) {
+        throw FormulaException("incorrect syntax");
+    }
 
     return listener.Build();
 }

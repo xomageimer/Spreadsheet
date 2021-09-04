@@ -598,20 +598,25 @@ int main() {
   RUN_TEST(tr, TestFormulaReferences);
   RUN_TEST(tr, TestFormulaExpressionFormatting);
   RUN_TEST(tr, TestFormulaReferencedCells);
+
 //  RUN_TEST(tr, TestFormulaHandleInsertion);
 //  RUN_TEST(tr, TestInsertionOverflow);
 //  RUN_TEST(tr, TestFormulaHandleDeletion);
-//  RUN_TEST(tr, TestErrorValue);
+  RUN_TEST(tr, TestErrorValue);
+
   RUN_TEST(tr, TestErrorDiv0);
   RUN_TEST(tr, TestEmptyCellTreatedAsZero);
   RUN_TEST(tr, TestFormulaInvalidPosition);
+
 //  RUN_TEST(tr, TestCellErrorPropagation);
 //  RUN_TEST(tr, TestCellsDeletionSimple);
 //  RUN_TEST(tr, TestCellsDeletion);
 //  RUN_TEST(tr, TestCellsDeletionAdjacent);
+
   RUN_TEST(tr, TestPrint);
-//  RUN_TEST(tr, TestCellReferences);
+  RUN_TEST(tr, TestCellReferences);
 //  RUN_TEST(tr, TestFormulaIncorrect);
+
 //  RUN_TEST(tr, TestCellCircularReferences);
   return 0;
 }
