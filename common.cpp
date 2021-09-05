@@ -86,7 +86,7 @@ Size::operator bool() const {
 }
 
 bool operator<(const Size &lhs, const Position &rhs) {
-    return lhs.rows < rhs.row + 1 || (lhs.rows == rhs.row + 1 && lhs.cols < rhs.col + 1);
+    return lhs.rows < rhs.row + 1 || (lhs.rows >= rhs.row + 1 && lhs.cols < rhs.col + 1);
 }
 
 bool operator<(const Position &lhs, const Size &rhs) {
@@ -131,7 +131,6 @@ std::ostream &operator<<(std::ostream &output, FormulaError fe) {
     return output;
 }
 
-#include "Engine.h"
 std::unique_ptr<ISheet> CreateSheet() {
     return std::make_unique<SpreadSheet>();
 }

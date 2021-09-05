@@ -64,7 +64,7 @@ IFormula::Value DefaultFormula::GetValue() const {
 }
 
 std::vector<Position> DefaultFormula::GetReferencedCells() const {
-    return as_tree->GetCells();
+    return as_tree->GetCellsPos();
 }
 
 std::string DefaultFormula::GetExpression() const {
@@ -112,7 +112,7 @@ IFormula::HandlingResult DefaultFormula::HandleDeletedCols(int first, int count)
 }
 
 void DefaultFormula::BuildAST(std::string const & text) const {
-    if (!as_tree || (as_tree && as_tree->GetCells().empty())) {
+    if (!as_tree || (as_tree && as_tree->GetCellsPos().empty())) {
         try {
             std::stringstream ss(text);
             as_tree.emplace(AST::ParseFormula(ss, *sheet_));
@@ -124,6 +124,9 @@ void DefaultFormula::BuildAST(std::string const & text) const {
     }
 }
 
+const std::optional<AST::ASTree> &DefaultFormula::GetAST() const {
+    return as_tree;
+}
 
 
 // TODO мб обработку исключения TableTooBigException надо вынести отдельно, дабы избежать копипасты
@@ -132,7 +135,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
         throw InvalidPositionException("invalid pos");
     }
 
-    if (!size || size < pos){
+    if (!size || size < pos) {
         if (!size.rows || pos.row >= size.rows) {
             if (size.rows == Position::kMaxRows)
                 throw TableTooBigException("The number of rows is greater/equal than the maximum");
@@ -140,7 +143,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
             size_t i = size.rows;
             size.rows = pos.row + 1;
             cells.resize(size.rows);
-            for (int j = i; j < size.rows; j++){
+            for (int j = i; j < size.rows; j++) {
                 cells[j].resize(size.cols);
             }
         }
@@ -154,6 +157,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
             }
         }
     }
+
     if (auto cell = GetCell(pos); (cell && cell->GetText() == text))
         return;
 
@@ -165,6 +169,17 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
    // TODO проверять при создании корректность позиции ячейки, остальные ошибки формулы проверять при вычислениях
     auto val = std::make_shared<DefaultCell>(text, this); // TODO если текст можно трактовать как число, то хранить в Value число
     cells[pos.row][pos.col] = dep_graph.AddVertex(val);
+
+    if (val->GetFormula()) {
+        auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
+
+        if (as_tree) {
+            auto cells_pos = as_tree->GetCellsPos();
+            for (auto &cell_pos : cells_pos) {
+                dep_graph.AddEdge(cells[pos.row][pos.col].lock(), cells[cell_pos.row][cell_pos.col].lock());
+            }
+        }
+    }
 }
 
 const ProxyCell SpreadSheet::GetCell(Position pos) const {
@@ -274,7 +289,7 @@ void SpreadSheet::InsertCols(int before, int count) {
                 dep_graph.InvalidOutcoming(row[i].lock());
                 auto formula = dynamic_cast<DefaultFormula *>(row[i].lock().get());
                 if (formula) {
-                    formula->HandleInsertedRows(before, count);
+                    formula->HandleInsertedCols(before, count);
                 }
             }
         }
@@ -336,7 +351,7 @@ Size SpreadSheet::GetPrintableSize() const {
     return size;
 }
 
-DependencyGraph &SpreadSheet::GetGraph() {
+DependencyGraph &SpreadSheet::GetGraph() const {
     return dep_graph;
 }
 

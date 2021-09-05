@@ -1,5 +1,4 @@
 #include "AST.h"
-
 #include <cmath>
 
 using namespace AST;
@@ -21,11 +20,12 @@ std::string Cell::GetText(const ISheet & sheet) const {
 // TODO в случае ошибки надо в Evaluate возвращать FormulaError
 IFormula::Value Cell::Evaluate(const ISheet & sheet) const {
     auto cell = sheet.GetCell(pos_);
+    if (!cell)
+        return 0;
+
     if (std::holds_alternative<std::string>(cell->GetValue())){
         return FormulaError::Category::Value;
     }
-    if (!cell)
-        return 0;
     return std::get<double>(sheet.GetCell(pos_)->GetValue());
 }
 
@@ -259,13 +259,8 @@ ASTree AST::ParseFormula(std::istream &in, const ISheet &sheet) {
         BailErrorListener error_listener;
         lexer.removeErrorListeners();
         lexer.addErrorListener(&error_listener);
-    } catch (...)
-    {
-        throw FormulaException("Invalid formula");
-    }
 
-    ASTListener listener;
-    try {
+        ASTListener listener;
         antlr4::CommonTokenStream tokens(&lexer);
 
         FormulaParser parser(&tokens);
@@ -275,9 +270,9 @@ ASTree AST::ParseFormula(std::istream &in, const ISheet &sheet) {
 
         antlr4::tree::ParseTree *tree = parser.main();  // метод соответствует корневому правилу
         antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+        return listener.Build();
     } catch (...) {
         throw FormulaException("incorrect syntax");
     }
 
-    return listener.Build();
 }

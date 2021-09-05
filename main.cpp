@@ -586,37 +586,47 @@ namespace {
 }
 
 int main() {
-  TestRunner tr;
-  RUN_TEST(tr, TestPositionAndStringConversion);
-  RUN_TEST(tr, TestPositionToStringInvalid);
-  RUN_TEST(tr, TestStringToPositionInvalid);
-  RUN_TEST(tr, TestEmpty);
-  RUN_TEST(tr, TestInvalidPosition);
-  RUN_TEST(tr, TestSetCellPlainText);
-  RUN_TEST(tr, TestClearCell);
-  RUN_TEST(tr, TestFormulaArithmetic);
-  RUN_TEST(tr, TestFormulaReferences);
-  RUN_TEST(tr, TestFormulaExpressionFormatting);
-  RUN_TEST(tr, TestFormulaReferencedCells);
+    auto sheet = CreateSheet();
+    sheet->SetCell("A6"_pos, "=A2-5");
+    sheet->SetCell("A2"_pos, "3");
+    sheet->SetCell("A3"_pos, "=C5-2");
+    sheet->SetCell("C5"_pos, "=A6+A2+11");
+    auto val = sheet->GetCell("C5"_pos)->GetValue();
+    sheet->InsertCols(1);
+    sheet->PrintValues(std::cout);
+//    std::cout << std::get<double>(sheet->GetCell("A6"_pos)->GetValue());
 
-//  RUN_TEST(tr, TestFormulaHandleInsertion);
-//  RUN_TEST(tr, TestInsertionOverflow);
-//  RUN_TEST(tr, TestFormulaHandleDeletion);
-  RUN_TEST(tr, TestErrorValue);
-
-  RUN_TEST(tr, TestErrorDiv0);
-  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
-  RUN_TEST(tr, TestFormulaInvalidPosition);
-
-//  RUN_TEST(tr, TestCellErrorPropagation);
-//  RUN_TEST(tr, TestCellsDeletionSimple);
-//  RUN_TEST(tr, TestCellsDeletion);
-//  RUN_TEST(tr, TestCellsDeletionAdjacent);
-
-  RUN_TEST(tr, TestPrint);
-  RUN_TEST(tr, TestCellReferences);
+//  TestRunner tr;
+//  RUN_TEST(tr, TestPositionAndStringConversion);
+//  RUN_TEST(tr, TestPositionToStringInvalid);
+//  RUN_TEST(tr, TestStringToPositionInvalid);
+//  RUN_TEST(tr, TestEmpty);
+//  RUN_TEST(tr, TestInvalidPosition);
+//  RUN_TEST(tr, TestSetCellPlainText);
+//  RUN_TEST(tr, TestClearCell);
+//  RUN_TEST(tr, TestFormulaArithmetic);
+//  RUN_TEST(tr, TestFormulaReferences);
+//  RUN_TEST(tr, TestFormulaExpressionFormatting);
+//  RUN_TEST(tr, TestFormulaReferencedCells);
+//
+////  RUN_TEST(tr, TestFormulaHandleInsertion);
+////  RUN_TEST(tr, TestInsertionOverflow);
+////  RUN_TEST(tr, TestFormulaHandleDeletion);
+//  RUN_TEST(tr, TestErrorValue);
+//
+//  RUN_TEST(tr, TestErrorDiv0);
+//  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
+//  RUN_TEST(tr, TestFormulaInvalidPosition);
+//
+////  RUN_TEST(tr, TestCellErrorPropagation);
+////  RUN_TEST(tr, TestCellsDeletionSimple);
+////  RUN_TEST(tr, TestCellsDeletion);
+////  RUN_TEST(tr, TestCellsDeletionAdjacent);
+//
+//  RUN_TEST(tr, TestPrint);
+//  RUN_TEST(tr, TestCellReferences);
 //  RUN_TEST(tr, TestFormulaIncorrect);
-
-//  RUN_TEST(tr, TestCellCircularReferences);
+//
+////  RUN_TEST(tr, TestCellCircularReferences);
   return 0;
 }

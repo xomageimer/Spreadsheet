@@ -128,7 +128,7 @@ namespace AST {
         }
         [[nodiscard]] std::string GetExpression(const ISheet & sheet) const { return root_->GetText(sheet); }
         [[nodiscard]] IFormula::Value Evaluate(const ISheet &) const;
-        [[nodiscard]] std::vector<Position> GetCells() const {
+        [[nodiscard]] std::vector<Position> GetCellsPos() const {
             return cells;
         }
 

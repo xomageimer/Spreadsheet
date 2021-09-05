@@ -10,6 +10,7 @@
 #include <map>
 #include <vector>
 
+
 // Позиция ячейки. Индексация с нуля.
 struct Position {
   int row = 0;

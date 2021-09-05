@@ -26,6 +26,8 @@ struct DefaultFormula : public IFormula {
     HandlingResult HandleDeletedRows(int first, int count = 1) override;
     HandlingResult HandleDeletedCols(int first, int count = 1) override;
 
+    const std::optional<AST::ASTree> & GetAST() const;
+
     friend std::unique_ptr<IFormula> ParseFormula(const std::string& expression);
 protected:
     mutable std::optional<AST::ASTree> as_tree;
@@ -71,10 +73,10 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    DependencyGraph & GetGraph();
+    DependencyGraph & GetGraph() const;
 private:
     std::vector<std::vector<std::weak_ptr<DefaultCell>>> cells {};
-    DependencyGraph dep_graph {*this};
+    mutable DependencyGraph dep_graph {*this};
 
     Size size {0, 0};
 };
