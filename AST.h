@@ -132,8 +132,11 @@ namespace AST {
             return cells;
         }
 
-        IFormula::HandlingResult MutateRows(int from, int count);
-        IFormula::HandlingResult MutateCols(int from, int count);
+        IFormula::HandlingResult InsertRows(int before, int count);
+        IFormula::HandlingResult InsertCols(int before, int count);
+
+        IFormula::HandlingResult DeleteRows(int first, int count);
+        IFormula::HandlingResult DeleteCols(int first, int count);
     private:
         std::shared_ptr<const Node> root_;
         std::vector<std::shared_ptr<Cell>> cell_ptrs;

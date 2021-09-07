@@ -75,6 +75,7 @@ public:
 
     DependencyGraph & GetGraph() const;
 private:
+    friend DependencyGraph;
     std::vector<std::vector<std::weak_ptr<DefaultCell>>> cells {};
     mutable DependencyGraph dep_graph {*this};
 

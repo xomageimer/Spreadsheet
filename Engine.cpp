@@ -90,25 +90,25 @@ IFormula::Value DefaultFormula::Evaluate(const ISheet &sheet) const {
 IFormula::HandlingResult DefaultFormula::HandleInsertedRows(int before, int count) {
     if (GetReferencedCells().empty())
         return IFormula::HandlingResult::NothingChanged;
-    return as_tree->MutateRows(before, count);
+    return as_tree->InsertRows(before, count);
 }
 
 IFormula::HandlingResult DefaultFormula::HandleInsertedCols(int before, int count) {
     if (GetReferencedCells().empty())
         return IFormula::HandlingResult::NothingChanged;
-    return as_tree->MutateCols(before, count);
+    return as_tree->InsertCols(before, count);
 }
 
 IFormula::HandlingResult DefaultFormula::HandleDeletedRows(int first, int count) {
     if (GetReferencedCells().empty())
         return IFormula::HandlingResult::NothingChanged;
-    return as_tree->MutateRows(first, -count); // TODO смотреть через muteted row какое исключение вернет pos и от этого возвращать опр значение
+    return as_tree->DeleteRows(first, count); // TODO смотреть через muteted row какое исключение вернет pos и от этого возвращать опр значение
 }
 
 IFormula::HandlingResult DefaultFormula::HandleDeletedCols(int first, int count) {
     if (GetReferencedCells().empty())
         return IFormula::HandlingResult::NothingChanged;
-    return as_tree->MutateRows(first, -count);
+    return as_tree->DeleteCols(first, count);
 }
 
 void DefaultFormula::BuildAST(std::string const & text) const {
@@ -164,11 +164,12 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
         dep_graph.Delete(cell.lock());
+    } else if (dep_graph.IsExist(pos)) {
+        dep_graph.InvalidOutcoming(pos);
     }
 
-   // TODO проверять при создании корректность позиции ячейки, остальные ошибки формулы проверять при вычислениях
-    auto val = std::make_shared<DefaultCell>(text, this); // TODO если текст можно трактовать как число, то хранить в Value число
-    cells[pos.row][pos.col] = dep_graph.AddVertex(val);
+    auto val = std::make_shared<DefaultCell>(text, this);
+    cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
 
     if (val->GetFormula()) {
         auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
@@ -176,7 +177,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
         if (as_tree) {
             auto cells_pos = as_tree->GetCellsPos();
             for (auto &cell_pos : cells_pos) {
-                dep_graph.AddEdge(cells[pos.row][pos.col].lock(), cells[cell_pos.row][cell_pos.col].lock());
+                dep_graph.AddEdge(pos, cell_pos);
             }
         }
     }
@@ -261,6 +262,7 @@ void SpreadSheet::InsertRows(int before, int count) {
             }
         }
     }
+    dep_graph.InsertRows(before, count);
 }
 
 void SpreadSheet::InsertCols(int before, int count) {
@@ -294,6 +296,7 @@ void SpreadSheet::InsertCols(int before, int count) {
             }
         }
     }
+    dep_graph.InsertCols(before, count);
 }
 
 void SpreadSheet::DeleteRows(int first, int count) {
@@ -316,6 +319,7 @@ void SpreadSheet::DeleteRows(int first, int count) {
             }
         }
     }
+    dep_graph.DeleteRows(first, count);
 
     cells.erase(cells.begin() + first, cells.begin() + first + count);
     size.rows = (size.rows >= count) ? size.rows - count : 0;
@@ -340,6 +344,7 @@ void SpreadSheet::DeleteCols(int first, int count) {
             }
         }
     }
+    dep_graph.DeleteCols(first, count);
 
     for (auto & row : cells){
         row.erase(row.begin() + first, row.begin() + first + count);

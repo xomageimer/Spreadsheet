@@ -3,9 +3,16 @@
 
 #include <algorithm>
 
-std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(std::shared_ptr<DefaultCell> new_cell) {
-    auto [it, b] = vertexes.emplace(std::move(new_cell), Edges{});
-    return it->first;
+std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(Position pos, std::shared_ptr<DefaultCell> new_cell) {
+    if (IsExist(pos)) {
+        *cache_cells_located_behind_table[pos].cur_val = std::move(*new_cell);
+        auto it = vertexes.find(cache_cells_located_behind_table[pos].cur_val);
+        Delete(pos);
+        return it->first;
+    } else {
+        vertexes[new_cell] = Edges{};
+        return vertexes.find(new_cell)->first;
+    }
 }
 
 // TODO крч тут нужно пройтись по всем ячейкам кт участвуют в формуле cell_ptr
@@ -23,7 +30,26 @@ void DependencyGraph::Delete(const std::shared_ptr<DefaultCell>& cell_ptr) {
     vertexes.erase(cell_ptr);
 }
 
-void DependencyGraph::AddEdge(std::shared_ptr<DefaultCell> par_cell, std::shared_ptr<DefaultCell> child_cell) {
+void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
+    auto spread_sheet = dynamic_cast<SpreadSheet * const>(&sheet);
+    if (!spread_sheet)
+        throw std::bad_cast();
+
+    auto par_cell_weak = spread_sheet->cells[par_pos.row][par_pos.col];
+    std::weak_ptr<DefaultCell> child_cell_weak;
+
+    if (!vertexes.count(par_cell_weak.lock()))
+        throw std::logic_error("can't find parent cell");
+    auto par_cell = par_cell_weak.lock();
+
+    if (!(spread_sheet->size > child_pos) || (spread_sheet->cells[child_pos.row][child_pos.col].expired() && !IsExist(child_pos))){
+        auto it = cache_cells_located_behind_table.emplace(child_pos, CacheVertex{std::make_shared<DefaultCell>(""), nullptr});
+        vertexes.emplace(it.first->second.cur_val, Edges{});
+    } else {
+        child_cell_weak = spread_sheet->cells[child_pos.row][child_pos.col];
+    }
+    auto child_cell = (!child_cell_weak.expired()) ? vertexes.find(child_cell_weak.lock())->first : cache_cells_located_behind_table.at(child_pos).cur_val;
+
     size_t edge_id = outcoming.size();
     outcoming.push_back({par_cell, child_cell});
     vertexes.at(par_cell).outcoming_ids.push_back(edge_id);
@@ -78,5 +104,101 @@ void DependencyGraph::InvalidOutcoming(std::shared_ptr<DefaultCell> cell_ptr) {
         if (formula_cell){
             InvalidOutcoming(next_cell->first);
         }
+    }
+}
+
+bool DependencyGraph::IsExist(Position pos) {
+    if (cache_cells_located_behind_table.find(pos) != cache_cells_located_behind_table.end())
+        return true;
+    return false;
+}
+
+void DependencyGraph::Delete(Position pos) {
+    cache_cells_located_behind_table.erase(pos);
+}
+
+void DependencyGraph::InvalidOutcoming(Position pos) {
+    if (cache_cells_located_behind_table.count(pos))
+        InvalidOutcoming(cache_cells_located_behind_table.at(pos).cur_val);
+}
+
+void DependencyGraph::ResetPos(Position old_pos, Position new_pos) {
+    if (old_pos == new_pos)
+        return;
+
+    if (IsExist(old_pos)) {
+        bool to_erase = true;
+        auto value = cache_cells_located_behind_table.at(old_pos).cur_val;
+        if (cache_cells_located_behind_table.at(old_pos).old_val) {
+            value = std::move(cache_cells_located_behind_table.at(old_pos).old_val);
+            to_erase = false;
+        }
+
+        if (IsExist(new_pos)) {
+            cache_cells_located_behind_table.at(new_pos).old_val = cache_cells_located_behind_table.at(new_pos).cur_val;
+            cache_cells_located_behind_table.at(new_pos).cur_val = value;
+        } else {
+            cache_cells_located_behind_table[new_pos].cur_val = value;
+        }
+        if (to_erase) {
+            cache_cells_located_behind_table[old_pos].cur_val = nullptr;
+            cache_cells_located_behind_table[old_pos].old_val = nullptr;
+        }
+    }
+}
+
+void DependencyGraph::InsertRows(int before, int count) {
+    for (auto & el : cache_cells_located_behind_table){
+        if (el.first.row > before + count) {
+            ResetPos(el.first, {el.first.row + count, el.first.col});
+        }
+    }
+    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
+        if (it->second.cur_val == nullptr){
+            it = cache_cells_located_behind_table.erase(it);
+        } else it++;
+    }
+}
+
+void DependencyGraph::InsertCols(int before, int count) {
+    for (auto & el : cache_cells_located_behind_table){
+        if (el.first.col > before + count) {
+            ResetPos(el.first, {el.first.row, el.first.col + count});
+        }
+    }
+    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
+        if (it->second.cur_val == nullptr){
+            it = cache_cells_located_behind_table.erase(it);
+        } else it++;
+    }
+}
+
+void DependencyGraph::DeleteRows(int first, int count) {
+    for (auto & el : cache_cells_located_behind_table){
+        if (el.first.row >= first && el.first.row < first + count) {
+            Delete(el.first);
+        } else if (el.first.row > first) {
+            ResetPos(el.first, {el.first.row - count, el.first.col});
+        }
+    }
+    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
+        if (it->second.cur_val == nullptr){
+            it = cache_cells_located_behind_table.erase(it);
+        } else it++;
+    }
+}
+
+void DependencyGraph::DeleteCols(int first, int count) {
+    for (auto & el : cache_cells_located_behind_table){
+        if (el.first.col >= first && el.first.col < first + count) {
+            Delete(el.first);
+        } else if (el.first.row > first) {
+            ResetPos(el.first, {el.first.col, el.first.col - count});
+        }
+    }
+    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
+        if (it->second.cur_val == nullptr){
+            it = cache_cells_located_behind_table.erase(it);
+        } else it++;
     }
 }

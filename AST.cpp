@@ -139,13 +139,13 @@ IFormula::Value ASTree::Evaluate(const ISheet & sheet) const {
     return root_->Evaluate(sheet);
 }
 
-IFormula::HandlingResult ASTree::MutateRows(int from, int count) {
+IFormula::HandlingResult ASTree::InsertRows(int before, int count) {
     IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
 
     cells.clear();
     for (auto & cell : cell_ptrs) {
         auto pos = cell->GetPos();
-        if (pos.row >= from) {
+        if (pos.row >= before) {
             cell->SetPos({pos.row + count, pos.col});
             if (handle_type == IFormula::HandlingResult::NothingChanged){
                 handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
@@ -160,14 +160,13 @@ IFormula::HandlingResult ASTree::MutateRows(int from, int count) {
     return handle_type;
 }
 
-// TODO при удалении надо как-то чтоле убирать значения
-IFormula::HandlingResult ASTree::MutateCols(int from, int count) {
+IFormula::HandlingResult ASTree::InsertCols(int before, int count) {
     IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
 
     cells.clear();
     for (auto & cell : cell_ptrs) {
         auto pos = cell->GetPos();
-        if (pos.col >= from) {
+        if (pos.col >= before) {
             cell->SetPos({pos.row, pos.col + count});
             if (handle_type == IFormula::HandlingResult::NothingChanged){
                 handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
@@ -180,6 +179,14 @@ IFormula::HandlingResult ASTree::MutateCols(int from, int count) {
     std::sort(cells.begin(), cells.end());
     cells.erase(std::unique(cells.begin(), cells.end()), cells.end());
     return handle_type;
+}
+
+IFormula::HandlingResult ASTree::DeleteRows(int first, int count) {
+    return IFormula::HandlingResult::ReferencesRenamedOnly;
+}
+
+IFormula::HandlingResult ASTree::DeleteCols(int first, int count) {
+    return IFormula::HandlingResult::ReferencesRenamedOnly;
 }
 
 void ASTListener::exitUnaryOp(FormulaParser::UnaryOpContext *op) {

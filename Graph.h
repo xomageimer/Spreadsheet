@@ -16,19 +16,37 @@ struct Edges {
     std::vector<EdgeID> outcoming_ids;
 };
 
+struct CacheVertex {
+    std::shared_ptr<struct DefaultCell> cur_val;
+    std::shared_ptr<struct DefaultCell> old_val = nullptr;
+};
+
 struct DependencyGraph {
 public:
     explicit DependencyGraph(ISheet & com_sheet) : sheet(com_sheet) {}
 
-    std::weak_ptr<struct DefaultCell> AddVertex(std::shared_ptr<struct DefaultCell> new_cell);
-    void AddEdge(std::shared_ptr<struct DefaultCell> par_cell, std::shared_ptr<struct DefaultCell> child_cell);
+    std::weak_ptr<struct DefaultCell> AddVertex(Position pos, std::shared_ptr<struct DefaultCell> new_cell);
+    bool IsExist(Position pos);
+    void ResetPos(Position old_pos, Position new_pos);
+    void AddEdge(Position par_pos, Position child_pos);
 
     void Delete(const std::shared_ptr<struct DefaultCell>& cell_ptr);
+    void Delete(Position pos);
+
+    void InsertRows(int before, int count);
+    void InsertCols(int before, int count);
+
+    void DeleteRows(int first, int count);
+    void DeleteCols(int first, int count);
 
     void InvalidIncoming(std::shared_ptr<struct DefaultCell> cell_ptr);
+
     void InvalidOutcoming(std::shared_ptr<struct DefaultCell> cell_ptr);
+    void InvalidOutcoming(Position pos);
 private:
     std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;
+    std::unordered_map<Position, CacheVertex, PositionHash> cache_cells_located_behind_table;
+
     std::vector<Edge> outcoming;
     std::vector<Edge> incoming;
 
