@@ -51,12 +51,12 @@ void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
     auto child_cell = (!child_cell_weak.expired()) ? vertexes.find(child_cell_weak.lock())->first : cache_cells_located_behind_table.at(child_pos).cur_val;
 
     size_t edge_id = outcoming.size();
-    outcoming.push_back({par_cell, child_cell});
-    vertexes.at(par_cell).outcoming_ids.push_back(edge_id);
+    outcoming.push_back({child_cell, par_cell});
+    vertexes.at(child_cell).outcoming_ids.push_back(edge_id);
 
     edge_id = incoming.size();
-    incoming.push_back({child_cell, par_cell});
-    vertexes.at(child_cell).incoming_ids.push_back(edge_id);
+    incoming.push_back({par_cell, child_cell});
+    vertexes.at(par_cell).incoming_ids.push_back(edge_id);
 
     //TODO проверка на ацикличность!
 }
@@ -69,6 +69,8 @@ void DependencyGraph::InvalidIncoming(std::shared_ptr<DefaultCell> cell_ptr) {
     auto formula_it = it->first->GetFormula().get();
     if (formula_it){
         formula_it->status = DefaultFormula::Status::Invalid;
+    } else {
+        return;
     }
 
     for (auto id : it->second.incoming_ids) {
@@ -77,7 +79,7 @@ void DependencyGraph::InvalidIncoming(std::shared_ptr<DefaultCell> cell_ptr) {
         auto formula_cell = it->first->GetFormula().get();
         if (formula_cell && formula_cell->status == DefaultFormula::Status::Invalid){
             return;
-        } else {
+        } else if (formula_cell) {
             InvalidIncoming(next_cell->first);
         }
     }
@@ -93,17 +95,12 @@ void DependencyGraph::InvalidOutcoming(std::shared_ptr<DefaultCell> cell_ptr) {
         return;
     } else if (formula_it) {
         formula_it->status = DefaultFormula::Status::Invalid;
-    } else {
-        return;
     }
 
     for (auto id : it->second.outcoming_ids) {
         auto next_cell = vertexes.find(outcoming.at(id).to.lock());
 
-        auto formula_cell = it->first->GetFormula().get();
-        if (formula_cell){
-            InvalidOutcoming(next_cell->first);
-        }
+        InvalidOutcoming(next_cell->first);
     }
 }
 
@@ -149,6 +146,8 @@ void DependencyGraph::ResetPos(Position old_pos, Position new_pos) {
 
 void DependencyGraph::InsertRows(int before, int count) {
     for (auto & el : cache_cells_located_behind_table){
+        if (el.first.row >= Position::kMaxRows - 1)
+            throw TableTooBigException("can't insert because too big exception");
         if (el.first.row > before + count) {
             ResetPos(el.first, {el.first.row + count, el.first.col});
         }
@@ -162,6 +161,8 @@ void DependencyGraph::InsertRows(int before, int count) {
 
 void DependencyGraph::InsertCols(int before, int count) {
     for (auto & el : cache_cells_located_behind_table){
+        if (el.first.col >= Position::kMaxCols - 1)
+            throw TableTooBigException("can't insert because too big exception");
         if (el.first.col > before + count) {
             ResetPos(el.first, {el.first.row, el.first.col + count});
         }

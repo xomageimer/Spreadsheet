@@ -588,13 +588,16 @@ namespace {
 int main() {
     auto sheet = CreateSheet();
 //    sheet->SetCell("A6"_pos, "=A2-5");
-//    sheet->SetCell("A2"_pos, "3");
-    sheet->SetCell("A3"_pos, "=C5-2"); // TODO тут проеблма
-//    sheet->SetCell("C5"_pos, "=A6+A2+11");
-//    auto val = sheet->GetCell("C5"_pos)->GetValue();
-//    sheet->InsertCols(1);
-//    sheet->PrintValues(std::cout);
-//    std::cout << std::get<double>(sheet->GetCell("A6"_pos)->GetValue());
+    sheet->SetCell("A2"_pos, "3");
+    sheet->SetCell("A3"_pos, "=C5-2");
+    sheet->SetCell("C5"_pos, "=A6+A2+11");
+//    std::cout << std::get<double>(val);
+//    val = sheet->GetCell("C6"_pos)->GetValue();
+    sheet->PrintTexts(std::cout);
+    sheet->InsertCols(1,5);
+    sheet->InsertRows(3, 2);
+//    sheet->SetCell("A6"_pos, "37");
+    sheet->PrintTexts(std::cout);
 
 //  TestRunner tr;
 //  RUN_TEST(tr, TestPositionAndStringConversion);
@@ -609,9 +612,9 @@ int main() {
 //  RUN_TEST(tr, TestFormulaExpressionFormatting);
 //  RUN_TEST(tr, TestFormulaReferencedCells);
 //
-////  RUN_TEST(tr, TestFormulaHandleInsertion);
-////  RUN_TEST(tr, TestInsertionOverflow);
-////  RUN_TEST(tr, TestFormulaHandleDeletion);
+//  RUN_TEST(tr, TestFormulaHandleInsertion);
+//  RUN_TEST(tr, TestInsertionOverflow);
+//  RUN_TEST(tr, TestFormulaHandleDeletion);
 //  RUN_TEST(tr, TestErrorValue);
 //
 //  RUN_TEST(tr, TestErrorDiv0);

@@ -20,7 +20,18 @@ ICell::Value DefaultCell::GetValue() const {
 }
 
 std::string DefaultCell::GetText() const {
-    return std::get<std::string>(value);
+    if (formula_){
+        return "=" + formula_->GetExpression();
+    }
+    if (std::holds_alternative<std::string>(value))
+        return std::get<std::string>(value);
+    else if (std::holds_alternative<double>(value)) {
+        std::stringstream ss;
+        auto val = std::get<double>(value);
+        ss << val;
+        return ss.str();
+    } else
+        return std::string{std::get<FormulaError>(value).ToString()};
 }
 
 std::vector<Position> DefaultCell::GetReferencedCells() const {
@@ -54,9 +65,11 @@ std::unique_ptr<IFormula> ParseFormula(const std::string& expression) {
     auto formula = std::make_unique<DefaultFormula>(expression);
     return formula;
 }
-
+// TODO полная срань с outcoming и incoming
 IFormula::Value DefaultFormula::GetValue() const {
-    if (status == Status::Invalid) evaluated_value = Evaluate(*sheet_);
+    if (status == Status::Invalid) {
+        evaluated_value = Evaluate(*sheet_);
+    }
     if (std::holds_alternative<double>(evaluated_value))
         return IFormula::Value(std::get<double>(evaluated_value));
     else
@@ -161,15 +174,20 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     if (auto cell = GetCell(pos); (cell && cell->GetText() == text))
         return;
 
+
+    std::shared_ptr<DefaultCell> val = std::make_shared<DefaultCell>(text, this);
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
-        dep_graph.Delete(cell.lock());
+        dep_graph.Delete(pos);
+        *cell.lock() = *val;
     } else if (dep_graph.IsExist(pos)) {
         dep_graph.InvalidOutcoming(pos);
+        cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
+        val = cells[pos.row][pos.col].lock();
+    } else {
+        cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
+        val = cells[pos.row][pos.col].lock();
     }
-
-    auto val = std::make_shared<DefaultCell>(text, this);
-    cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
 
     if (val->GetFormula()) {
         auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
@@ -251,11 +269,12 @@ void SpreadSheet::InsertRows(int before, int count) {
     cells.insert(it, count, std::vector<std::weak_ptr<DefaultCell>>(size.cols));
     size.rows += count;
 
-    for (int i = before + count; i < size.rows; i++) {
+    for (int i = 0; i < size.rows; i++) {
         for (auto & el : cells[i]) {
             if (!el.expired()) {
-                dep_graph.InvalidOutcoming(el.lock());
-                auto formula = dynamic_cast<DefaultFormula *>(el.lock().get());
+                if (i > before + count)
+                    dep_graph.InvalidOutcoming(el.lock());
+                auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
                 if (formula) {
                     formula->HandleInsertedRows(before, count);
                 }
@@ -286,10 +305,11 @@ void SpreadSheet::InsertCols(int before, int count) {
     size.cols += count;
 
     for (auto & row : cells) {
-        for (int i = before + count; i < size.cols; i++) {
+        for (int i = 0; i < size.cols; i++) {
             if (!row[i].expired()) {
-                dep_graph.InvalidOutcoming(row[i].lock());
-                auto formula = dynamic_cast<DefaultFormula *>(row[i].lock().get());
+                if (i >= before + count)
+                    dep_graph.InvalidOutcoming(row[i].lock());
+                auto formula = dynamic_cast<DefaultFormula *>(row[i].lock()->GetFormula().get());
                 if (formula) {
                     formula->HandleInsertedCols(before, count);
                 }
@@ -311,7 +331,7 @@ void SpreadSheet::DeleteRows(int first, int count) {
                     dep_graph.Delete(el.lock());
                 }
                 else {
-                    auto formula = dynamic_cast<DefaultFormula *>(el.lock().get());
+                    auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
                     if (formula) {
                         formula->HandleDeletedRows(first, count);
                     }
@@ -336,7 +356,7 @@ void SpreadSheet::DeleteCols(int first, int count) {
                 if (j < first + count) {
                     dep_graph.Delete(row[j].lock());
                 } else {
-                    auto formula = dynamic_cast<DefaultFormula *>(row[j].lock().get());
+                    auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
                     if (formula) {
                         formula->HandleDeletedCols(first, count);
                     }

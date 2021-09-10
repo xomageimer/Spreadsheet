@@ -150,8 +150,6 @@ IFormula::HandlingResult ASTree::InsertRows(int before, int count) {
             if (handle_type == IFormula::HandlingResult::NothingChanged){
                 handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
             }
-        } else {
-            handle_type = IFormula::HandlingResult::ReferencesChanged;
         }
         cells.push_back(cell->GetPos());
     }
@@ -171,8 +169,6 @@ IFormula::HandlingResult ASTree::InsertCols(int before, int count) {
             if (handle_type == IFormula::HandlingResult::NothingChanged){
                 handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
             }
-        } else {
-            handle_type = IFormula::HandlingResult::ReferencesChanged;
         }
         cells.push_back(cell->GetPos());
     }
@@ -181,7 +177,7 @@ IFormula::HandlingResult ASTree::InsertCols(int before, int count) {
     return handle_type;
 }
 
-IFormula::HandlingResult ASTree::DeleteRows(int first, int count) {
+IFormula::HandlingResult ASTree::DeleteRows(int first, int count) { // TODO реализовать след методы
     return IFormula::HandlingResult::ReferencesRenamedOnly;
 }
 
