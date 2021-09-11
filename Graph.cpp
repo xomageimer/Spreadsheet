@@ -145,9 +145,10 @@ void DependencyGraph::ResetPos(Position old_pos, Position new_pos) {
 }
 
 void DependencyGraph::InsertRows(int before, int count) {
+    if (std::prev(cache_cells_located_behind_table.end())->first.row >= Position::kMaxRows - count)
+        throw TableTooBigException("can't insert because too big exception");
+
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.row >= Position::kMaxRows - 1)
-            throw TableTooBigException("can't insert because too big exception");
         if (el.first.row > before + count) {
             ResetPos(el.first, {el.first.row + count, el.first.col});
         }
@@ -160,9 +161,10 @@ void DependencyGraph::InsertRows(int before, int count) {
 }
 
 void DependencyGraph::InsertCols(int before, int count) {
+    if (std::prev(cache_cells_located_behind_table.end())->first.col >= Position::kMaxCols - count)
+        throw TableTooBigException("can't insert because too big exception");
+
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.col >= Position::kMaxCols - 1)
-            throw TableTooBigException("can't insert because too big exception");
         if (el.first.col > before + count) {
             ResetPos(el.first, {el.first.row, el.first.col + count});
         }

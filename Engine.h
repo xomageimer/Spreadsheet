@@ -14,7 +14,7 @@ struct DefaultFormula : public IFormula {
 
     Value GetValue() const override;
 
-    IFormula::Value Evaluate(const ISheet& sheet) const override; // TODO не забыть менять статус // TODO добовлять в граф зависитмостей объекты
+    IFormula::Value Evaluate(const ISheet& sheet) const override;
 
     std::string GetExpression() const override;
 
@@ -47,6 +47,8 @@ struct DefaultCell : public ICell {
     [[nodiscard]] std::shared_ptr<IFormula> GetFormula() const {
         return formula_;
     }
+
+    void SetError(FormulaError::Category err);
 private:
     std::shared_ptr<IFormula> formula_ = nullptr;
 
@@ -75,7 +77,10 @@ public:
 
     DependencyGraph & GetGraph() const;
 private:
+    void CheckSizeCorrectly(Position pos);
+
     friend DependencyGraph;
+
     std::vector<std::vector<std::weak_ptr<DefaultCell>>> cells {};
     mutable DependencyGraph dep_graph {*this};
 

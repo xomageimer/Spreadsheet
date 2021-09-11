@@ -13,7 +13,10 @@ std::string Cell::GetText(const ISheet & sheet) const {
     auto text = pos_.ToString();
     if (&sheet != nullptr && std::holds_alternative<FormulaError>(sheet.GetCell(pos_)->GetValue()))
         text = std::get<FormulaError>(sheet.GetCell(pos_)->GetValue()).ToString();
-    text = pos_.ToString();
+    else if (pos_.row < 0 || pos_.col < 0)
+        text = FormulaError(FormulaError::Category::Ref).ToString();
+    else
+        text = pos_.ToString();
     return text;
 }
 
@@ -23,7 +26,10 @@ IFormula::Value Cell::Evaluate(const ISheet & sheet) const {
     if (!cell)
         return 0;
 
-    if (std::holds_alternative<std::string>(cell->GetValue())){
+    if (pos_.row < 0 || pos_.col < 0){
+        return FormulaError::Category::Ref;
+    }
+    else if (std::holds_alternative<std::string>(cell->GetValue())){
         return FormulaError::Category::Value;
     }
     return std::get<double>(sheet.GetCell(pos_)->GetValue());
@@ -177,12 +183,56 @@ IFormula::HandlingResult ASTree::InsertCols(int before, int count) {
     return handle_type;
 }
 
-IFormula::HandlingResult ASTree::DeleteRows(int first, int count) { // TODO реализовать след методы
-    return IFormula::HandlingResult::ReferencesRenamedOnly;
+IFormula::HandlingResult ASTree::DeleteRows(int first, int count) {
+    IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
+
+    cells.clear();
+    for (auto & cell : cell_ptrs){
+        auto pos = cell->GetPos();
+        if (pos.row >= first) {
+            cell->SetPos({pos.row - count, pos.col});
+            if (pos.row < first + count) {
+                handle_type = IFormula::HandlingResult::ReferencesChanged;
+                cell->SetPos({pos.row - pos.row - 1, pos.col});
+            } else {
+                if (handle_type == IFormula::HandlingResult::NothingChanged) {
+                    handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
+                }
+            }
+        }
+        if (cell->GetPos().row >= 0 && cell->GetPos().col >= 0)
+            cells.push_back(cell->GetPos());
+    }
+    std::sort(cells.begin(), cells.end());
+    cells.erase(std::unique(cells.begin(), cells.end()), cells.end());
+
+    return handle_type;
 }
 
 IFormula::HandlingResult ASTree::DeleteCols(int first, int count) {
-    return IFormula::HandlingResult::ReferencesRenamedOnly;
+    IFormula::HandlingResult handle_type = IFormula::HandlingResult::NothingChanged;
+
+    cells.clear();
+    for (auto & cell : cell_ptrs){
+        auto pos = cell->GetPos();
+        if (pos.col >= first) {
+            cell->SetPos({pos.row, pos.col - count});
+            if (pos.col < first + count) {
+                handle_type = IFormula::HandlingResult::ReferencesChanged;
+                cell->SetPos({pos.row, pos.col - pos.col - 1});
+            } else {
+                if (handle_type == IFormula::HandlingResult::NothingChanged) {
+                    handle_type = IFormula::HandlingResult::ReferencesRenamedOnly;
+                }
+            }
+        }
+        if (cell->GetPos().col >= 0 && cell->GetPos().row >= 0)
+            cells.push_back(cell->GetPos());
+    }
+    std::sort(cells.begin(), cells.end());
+    cells.erase(std::unique(cells.begin(), cells.end()), cells.end());
+
+    return handle_type;
 }
 
 void ASTListener::exitUnaryOp(FormulaParser::UnaryOpContext *op) {

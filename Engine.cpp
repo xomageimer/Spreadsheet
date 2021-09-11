@@ -56,6 +56,9 @@ bool DefaultCell::AllIsDigits(const std::string &str) {
     });
 }
 
+void DefaultCell::SetError(FormulaError::Category err) {
+    value = err;
+}
 
 DefaultFormula::DefaultFormula(std::string const & val, const ISheet * sheet) : sheet_(sheet) {
     BuildAST(val);
@@ -65,7 +68,7 @@ std::unique_ptr<IFormula> ParseFormula(const std::string& expression) {
     auto formula = std::make_unique<DefaultFormula>(expression);
     return formula;
 }
-// TODO полная срань с outcoming и incoming
+
 IFormula::Value DefaultFormula::GetValue() const {
     if (status == Status::Invalid) {
         evaluated_value = Evaluate(*sheet_);
@@ -115,7 +118,7 @@ IFormula::HandlingResult DefaultFormula::HandleInsertedCols(int before, int coun
 IFormula::HandlingResult DefaultFormula::HandleDeletedRows(int first, int count) {
     if (GetReferencedCells().empty())
         return IFormula::HandlingResult::NothingChanged;
-    return as_tree->DeleteRows(first, count); // TODO смотреть через muteted row какое исключение вернет pos и от этого возвращать опр значение
+    return as_tree->DeleteRows(first, count);
 }
 
 IFormula::HandlingResult DefaultFormula::HandleDeletedCols(int first, int count) {
@@ -141,39 +144,15 @@ const std::optional<AST::ASTree> &DefaultFormula::GetAST() const {
     return as_tree;
 }
 
-
-// TODO мб обработку исключения TableTooBigException надо вынести отдельно, дабы избежать копипасты
 void SpreadSheet::SetCell(Position pos, std::string text) {
     if (!pos.IsValid()) {
         throw InvalidPositionException("invalid pos");
     }
 
-    if (!size || size < pos) {
-        if (!size.rows || pos.row >= size.rows) {
-            if (size.rows == Position::kMaxRows)
-                throw TableTooBigException("The number of rows is greater/equal than the maximum");
-
-            size_t i = size.rows;
-            size.rows = pos.row + 1;
-            cells.resize(size.rows);
-            for (int j = i; j < size.rows; j++) {
-                cells[j].resize(size.cols);
-            }
-        }
-        if (!size.cols || pos.col >= size.cols) {
-            if (size.cols == Position::kMaxCols)
-                throw TableTooBigException("The number of cols is greater/equal than the maximum");
-
-            size.cols = pos.col + 1;
-            for (auto &cols : cells) {
-                cols.resize(size.cols);
-            }
-        }
-    }
+    CheckSizeCorrectly(pos);
 
     if (auto cell = GetCell(pos); (cell && cell->GetText() == text))
         return;
-
 
     std::shared_ptr<DefaultCell> val = std::make_shared<DefaultCell>(text, this);
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
@@ -202,18 +181,12 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 }
 
 const ProxyCell SpreadSheet::GetCell(Position pos) const {
-    if (!pos.IsValid())
-        throw InvalidPositionException("invalid pos");
-
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
         return ProxyCell{nullptr};
     return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
 }
 
 ProxyCell SpreadSheet::GetCell(Position pos) {
-    if (!pos.IsValid())
-        throw InvalidPositionException("invalid pos");
-
     if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
         return ProxyCell{nullptr};
     return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
@@ -267,6 +240,7 @@ void SpreadSheet::InsertRows(int before, int count) {
 
     auto it = cells.begin() + before;
     cells.insert(it, count, std::vector<std::weak_ptr<DefaultCell>>(size.cols));
+    dep_graph.InsertRows(before, count);
     size.rows += count;
 
     for (int i = 0; i < size.rows; i++) {
@@ -281,7 +255,6 @@ void SpreadSheet::InsertRows(int before, int count) {
             }
         }
     }
-    dep_graph.InsertRows(before, count);
 }
 
 void SpreadSheet::InsertCols(int before, int count) {
@@ -295,13 +268,14 @@ void SpreadSheet::InsertCols(int before, int count) {
             it = row.insert(it, count, {});
             count_of_new_block++;
         }
-    } catch (std::exception & excep) {
+    } catch (const std::exception & excep) {
         for (int i = 0; i < count_of_new_block; i++) {
             auto it = cells[i].begin() + before;
             cells[i].erase(it, it + count);
         }
         throw excep;
     }
+    dep_graph.InsertCols(before, count);
     size.cols += count;
 
     for (auto & row : cells) {
@@ -316,25 +290,20 @@ void SpreadSheet::InsertCols(int before, int count) {
             }
         }
     }
-    dep_graph.InsertCols(before, count);
 }
 
 void SpreadSheet::DeleteRows(int first, int count) {
     if (size == Size{0, 0})
         return;
 
-    for (int i = first; i < size.rows; i++){
+    for (int i = 0; i < size.rows; i++){
         for (auto & el : cells[i]){
             if (!el.expired()) {
-                dep_graph.InvalidOutcoming(el.lock());
-                if (i < first + count) {
-                    dep_graph.Delete(el.lock());
-                }
-                else {
-                    auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
-                    if (formula) {
-                        formula->HandleDeletedRows(first, count);
-                    }
+                if (i >= first + count)
+                    dep_graph.InvalidOutcoming(el.lock());
+                auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
+                if (formula) {
+                    formula->HandleDeletedRows(first, count);
                 }
             }
         }
@@ -350,16 +319,13 @@ void SpreadSheet::DeleteCols(int first, int count) {
         return;
 
     for (auto & row : cells){
-        for (int j = first; j < static_cast<int>(row.size()); j++){
+        for (int j = 0; j < static_cast<int>(row.size()); j++){
             if (!row[j].expired()) {
-                dep_graph.InvalidOutcoming(row[j].lock());
-                if (j < first + count) {
-                    dep_graph.Delete(row[j].lock());
-                } else {
-                    auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
-                    if (formula) {
-                        formula->HandleDeletedCols(first, count);
-                    }
+                if (j >= first + count)
+                    dep_graph.InvalidOutcoming(row[j].lock());
+                auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
+                if (formula) {
+                    formula->HandleDeletedCols(first, count);
                 }
             }
         }
@@ -410,5 +376,30 @@ void SpreadSheet::PrintTexts(std::ostream &output) const {
             }
         }
         output << '\n';
+    }
+}
+
+void SpreadSheet::CheckSizeCorrectly(Position pos) {
+    if (!size || size < pos) {
+        if (!size.rows || pos.row >= size.rows) {
+            if (size.rows == Position::kMaxRows)
+                throw TableTooBigException("The number of rows is greater/equal than the maximum");
+
+            size_t i = size.rows;
+            size.rows = pos.row + 1;
+            cells.resize(size.rows);
+            for (int j = i; j < size.rows; j++) {
+                cells[j].resize(size.cols);
+            }
+        }
+        if (!size.cols || pos.col >= size.cols) {
+            if (size.cols == Position::kMaxCols)
+                throw TableTooBigException("The number of cols is greater/equal than the maximum");
+
+            size.cols = pos.col + 1;
+            for (auto &cols : cells) {
+                cols.resize(size.cols);
+            }
+        }
     }
 }

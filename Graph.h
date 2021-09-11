@@ -45,7 +45,7 @@ public:
     void InvalidOutcoming(Position pos);
 private:
     std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;
-    std::unordered_map<Position, CacheVertex, PositionHash> cache_cells_located_behind_table;
+    std::map<Position, CacheVertex> cache_cells_located_behind_table;
 
     std::vector<Edge> outcoming;
     std::vector<Edge> incoming;
