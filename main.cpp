@@ -438,7 +438,7 @@ namespace {
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),
                  ICell::Value(FormulaError::Category::Ref));
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetText(),
-                 "=" + ToString(FormulaError::Category::Ref)); // TODO проверять является ли value данной ячейки - FormulaError или текстом, кт нельзя кастануть к double. Тогда крепить ошибку
+                 "=" + ToString(FormulaError::Category::Ref));
 
     ASSERT_EQUAL(sheet->GetCell("A2"_pos)->GetValue(),
                  ICell::Value(FormulaError::Category::Ref));
@@ -586,15 +586,6 @@ namespace {
 }
 
 int main() {
-//    auto sheet = CreateSheet();
-//    sheet->SetCell("A2"_pos, "3");
-//    sheet->SetCell("A3"_pos, "=C5-2");
-//    sheet->SetCell("C5"_pos, "=A6+A2+11");
-//    sheet->PrintValues(std::cout);
-//    sheet->DeleteCols(1);
-//    sheet->DeleteRows(3, 1);
-//    sheet->PrintValues(std::cout);
-
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);
   RUN_TEST(tr, TestPositionToStringInvalid);
@@ -617,10 +608,10 @@ int main() {
   RUN_TEST(tr, TestEmptyCellTreatedAsZero);
   RUN_TEST(tr, TestFormulaInvalidPosition);
 
-//  RUN_TEST(tr, TestCellErrorPropagation);
-//  RUN_TEST(tr, TestCellsDeletionSimple);
-//  RUN_TEST(tr, TestCellsDeletion);
-//  RUN_TEST(tr, TestCellsDeletionAdjacent);
+  RUN_TEST(tr, TestCellErrorPropagation);
+  RUN_TEST(tr, TestCellsDeletionSimple);
+  RUN_TEST(tr, TestCellsDeletion);
+  RUN_TEST(tr, TestCellsDeletionAdjacent);
 
   RUN_TEST(tr, TestPrint);
   RUN_TEST(tr, TestCellReferences);

@@ -6,7 +6,6 @@
 ICell::Value DefaultCell::GetValue() const {
     if (formula_) {
         auto eval_val = formula_->GetValue();
-        ICell::Value val;
         if (std::holds_alternative<double>(eval_val))
             return std::get<double>(eval_val);
         else
@@ -293,7 +292,7 @@ void SpreadSheet::InsertCols(int before, int count) {
 }
 
 void SpreadSheet::DeleteRows(int first, int count) {
-    if (size == Size{0, 0})
+    if (size == Size{0, 0})                 // TODO надо ли делать такую проверку?
         return;
 
     for (int i = 0; i < size.rows; i++){
@@ -301,6 +300,10 @@ void SpreadSheet::DeleteRows(int first, int count) {
             if (!el.expired()) {
                 if (i >= first + count)
                     dep_graph.InvalidOutcoming(el.lock());
+                else if (i >= first && i < count) {
+                    dep_graph.Delete(el.lock());
+                    continue;
+                }
                 auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
                 if (formula) {
                     formula->HandleDeletedRows(first, count);
@@ -323,6 +326,10 @@ void SpreadSheet::DeleteCols(int first, int count) {
             if (!row[j].expired()) {
                 if (j >= first + count)
                     dep_graph.InvalidOutcoming(row[j].lock());
+                else if (j >= first && j < count) {
+                    dep_graph.Delete(row[j].lock());
+                    continue;
+                }
                 auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
                 if (formula) {
                     formula->HandleDeletedCols(first, count);
@@ -356,6 +363,8 @@ void SpreadSheet::PrintValues(std::ostream &output) const {
             if (auto cell = GetCell({i, j}); cell) {
                 if (std::holds_alternative<double>(cell->GetValue()))
                     output << std::get<double>(cell->GetValue());
+                else if (std::holds_alternative<FormulaError>(cell->GetValue()))
+                    output << std::get<FormulaError>(cell->GetValue()).ToString();
                 else
                     output << std::get<std::string>(cell->GetValue());
             }

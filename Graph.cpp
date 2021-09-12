@@ -15,8 +15,6 @@ std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(Position pos, std::shared_
     }
 }
 
-// TODO крч тут нужно пройтись по всем ячейкам кт участвуют в формуле cell_ptr
-//  и уничтожить их связь с этим удаленным cell_ptr (идея 10/10)
 void DependencyGraph::Delete(const std::shared_ptr<DefaultCell>& cell_ptr) {
     auto it = vertexes.find(cell_ptr);
     for (auto & el : it->second.incoming_ids) {
@@ -179,7 +177,8 @@ void DependencyGraph::InsertCols(int before, int count) {
 void DependencyGraph::DeleteRows(int first, int count) {
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.row >= first && el.first.row < first + count) {
-            Delete(el.first);
+            el.second.cur_val = nullptr;
+            el.second.old_val = nullptr;
         } else if (el.first.row > first) {
             ResetPos(el.first, {el.first.row - count, el.first.col});
         }
@@ -194,7 +193,8 @@ void DependencyGraph::DeleteRows(int first, int count) {
 void DependencyGraph::DeleteCols(int first, int count) {
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.col >= first && el.first.col < first + count) {
-            Delete(el.first);
+            el.second.cur_val = nullptr;
+            el.second.old_val = nullptr;
         } else if (el.first.row > first) {
             ResetPos(el.first, {el.first.col, el.first.col - count});
         }

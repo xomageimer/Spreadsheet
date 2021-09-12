@@ -26,9 +26,9 @@ public:
   };
 
   enum class Status {
-      Invalid, // TODO при таком состоянии должна вычислиться формулы при вызове GetValue
-      Error, // TODO если состояние Error, то ничего вычисляться не должно
-      Valid // TODO при таком состоянии ничего не вычисляется, значение должно быть закшированно
+      Invalid,
+      Error,
+      Valid
   } mutable status = Status::Invalid;
 
   virtual ~IFormula() = default;

@@ -11,28 +11,29 @@ std::string Value::GetText(const ISheet &) const {
 
 std::string Cell::GetText(const ISheet & sheet) const {
     auto text = pos_.ToString();
-    if (&sheet != nullptr && std::holds_alternative<FormulaError>(sheet.GetCell(pos_)->GetValue()))
-        text = std::get<FormulaError>(sheet.GetCell(pos_)->GetValue()).ToString();
-    else if (pos_.row < 0 || pos_.col < 0)
+    if (pos_.row < 0 || pos_.col < 0)
         text = FormulaError(FormulaError::Category::Ref).ToString();
     else
         text = pos_.ToString();
     return text;
 }
 
-// TODO в случае ошибки надо в Evaluate возвращать FormulaError
 IFormula::Value Cell::Evaluate(const ISheet & sheet) const {
+    if (pos_.row < 0 || pos_.col < 0){
+        return FormulaError::Category::Ref;
+    }
     auto cell = sheet.GetCell(pos_);
     if (!cell)
         return 0;
 
-    if (pos_.row < 0 || pos_.col < 0){
-        return FormulaError::Category::Ref;
-    }
-    else if (std::holds_alternative<std::string>(cell->GetValue())){
+    auto cell_val = cell->GetValue();
+    if (std::holds_alternative<std::string>(cell_val)){
         return FormulaError::Category::Value;
     }
-    return std::get<double>(sheet.GetCell(pos_)->GetValue());
+    else if (std::holds_alternative<FormulaError>(cell_val)) {
+        return std::get<FormulaError>(cell_val);
+    } else
+        return std::get<double>(cell_val);
 }
 
 UnaryOp::UnaryOp(type op) {
@@ -44,7 +45,10 @@ void UnaryOp::SetValue(std::shared_ptr<const Node> node) {
 }
 
 IFormula::Value UnaryOp::Evaluate(const ISheet & sheet) const {
-    return (op_ == type::UN_SUB) ? -1 * std::get<double>(value_->Evaluate(sheet)) : std::get<double>(value_->Evaluate(sheet));
+    auto eval_val = value_->Evaluate(sheet);
+    if (std::holds_alternative<FormulaError>(eval_val))
+        return std::get<FormulaError>(eval_val);
+    return (op_ == type::UN_SUB) ? -1 * std::get<double>(eval_val) : std::get<double>(eval_val);
 }
 
 std::string UnaryOp::GetText(const ISheet & sheet) const {
