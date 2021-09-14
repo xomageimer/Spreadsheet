@@ -33,16 +33,6 @@ struct Position {
   static const int kMaxCols = 16384;
 };
 
-struct PositionHash{
-    size_t operator()(Position const & pos) const {
-        size_t A = i_hash(pos.row);
-        size_t B = i_hash(pos.col);
-        static const size_t x = 42;
-        return (A * x + B);
-    }
-    std::hash<int> i_hash;
-};
-
 struct Size {
   int rows = 0;
   int cols = 0;

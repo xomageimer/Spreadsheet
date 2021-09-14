@@ -623,6 +623,56 @@ void TestPascalTriangle(){
     ASSERT_EQUAL(sheet->GetCell("L11"_pos)->GetValue(), ICell::Value(1));
 }
 
+void TestNonExistentCell() {
+    auto sheet= CreateSheet();
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), ICell::Value(0.00));
+}
+
+void Test001() {
+    auto sheet= CreateSheet();
+    sheet->SetCell("A1"_pos,"3.14");
+    sheet->SetCell("A2"_pos,"=A1+42");
+    auto res= sheet->GetCell("A2"_pos)->GetValue();
+    ASSERT(std::holds_alternative<FormulaError>(res));
+}
+
+void Test002() {
+    auto sheet= CreateSheet();
+    bool caught= false;
+    try {
+        sheet->SetCell("A1"_pos, "= ");
+    } catch ( FormulaException &fe ) {
+        caught= true ;
+    }
+    ASSERT(caught);
+}
+void Test003() {
+    auto sheet= CreateSheet();
+    sheet->SetCell("A1"_pos, "=");
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),ICell::Value("="));
+}
+
+// TODO под вопросос такой ввод
+//void Test004() {
+//    auto sheet= CreateSheet();
+//    sheet->SetCell("A1"_pos, "=1e+1000");
+//    ASSERT( std::holds_alternative<FormulaError>(sheet->GetCell("A1"_pos)->GetValue()) );
+//}
+
+void Test005() {
+    auto sheet= CreateSheet();
+    sheet->SetCell("A1"_pos,"=A2");
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),ICell::Value(0));
+    sheet->SetCell("A2"_pos,"42");
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),ICell::Value(42));
+}
+
+void Test006() {
+    auto sheet= CreateSheet();
+    sheet->SetCell("A1"_pos, "\'=R2D2");
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),ICell::Value("=R2D2"));
+}
+
 int main() {
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);
@@ -658,6 +708,15 @@ int main() {
   RUN_TEST(tr, TestCellCircularReferences);
 
   RUN_TEST(tr, TestPascalTriangle);
+
+  RUN_TEST(tr, TestNonExistentCell);
+
+  RUN_TEST(tr, Test001);
+  RUN_TEST(tr, Test002);
+  RUN_TEST(tr, Test003);
+//  RUN_TEST(tr, Test004);
+  RUN_TEST(tr, Test005);
+  RUN_TEST(tr, Test006);
 
   return 0;
 }
