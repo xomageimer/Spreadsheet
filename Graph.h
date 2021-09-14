@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 
 struct Edge {
     std::weak_ptr<struct DefaultCell> from;
@@ -30,7 +31,7 @@ public:
     void ResetPos(Position old_pos, Position new_pos);
     void AddEdge(Position par_pos, Position child_pos);
 
-    void Delete(const std::shared_ptr<struct DefaultCell>& cell_ptr);
+    bool Delete(Position pos, const std::shared_ptr<struct DefaultCell>& cell_ptr);
     void Delete(Position pos);
 
     void InsertRows(int before, int count);
@@ -47,10 +48,13 @@ private:
     std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;
     std::map<Position, CacheVertex> cache_cells_located_behind_table;
 
-    std::vector<Edge> outcoming;
-    std::vector<Edge> incoming;
+    std::unordered_map<int, Edge> outcoming;
+    std::unordered_map<int, Edge> incoming;
 
     ISheet & sheet;
+
+    void CheckAcyclicity(std::shared_ptr<struct DefaultCell> cell_ptr);
+    void CheckAcylicityImpl(std::shared_ptr<struct DefaultCell> cell_ptr, std::unordered_set<std::shared_ptr<struct DefaultCell>> & cols);
 };
 
 #endif //SPREADSHEET_GRAPH_H

@@ -47,8 +47,6 @@ struct DefaultCell : public ICell {
     [[nodiscard]] std::shared_ptr<IFormula> GetFormula() const {
         return formula_;
     }
-
-    void SetError(FormulaError::Category err);
 private:
     std::shared_ptr<IFormula> formula_ = nullptr;
 
@@ -74,8 +72,6 @@ public:
 
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
-
-    DependencyGraph & GetGraph() const;
 private:
     void CheckSizeCorrectly(Position pos);
 

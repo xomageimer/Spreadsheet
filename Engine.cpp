@@ -55,10 +55,6 @@ bool DefaultCell::AllIsDigits(const std::string &str) {
     });
 }
 
-void DefaultCell::SetError(FormulaError::Category err) {
-    value = err;
-}
-
 DefaultFormula::DefaultFormula(std::string const & val, const ISheet * sheet) : sheet_(sheet) {
     BuildAST(val);
 }
@@ -150,32 +146,37 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 
     CheckSizeCorrectly(pos);
 
+    // TODO мб написать компортаор кт будет игнорировать пробельные символы
     if (auto cell = GetCell(pos); (cell && cell->GetText() == text))
         return;
 
+    std::shared_ptr<DefaultCell> prev_val = nullptr;
     std::shared_ptr<DefaultCell> val = std::make_shared<DefaultCell>(text, this);
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
-        dep_graph.Delete(pos);
-        *cell.lock() = *val;
+        prev_val = std::make_shared<DefaultCell>(*cells.at(pos.row).at(pos.col).lock());
+        dep_graph.Delete(pos, cell.lock());
     } else if (dep_graph.IsExist(pos)) {
         dep_graph.InvalidOutcoming(pos);
-        cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
-        val = cells[pos.row][pos.col].lock();
-    } else {
-        cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
-        val = cells[pos.row][pos.col].lock();
     }
+    cells[pos.row][pos.col] = dep_graph.AddVertex(pos, val);
+    val = cells[pos.row][pos.col].lock();
 
-    if (val->GetFormula()) {
-        auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
+    try {
+        if (val->GetFormula()) {
+            auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
 
-        if (as_tree) {
-            auto cells_pos = as_tree->GetCellsPos();
-            for (auto &cell_pos : cells_pos) {
-                dep_graph.AddEdge(pos, cell_pos);
+            if (as_tree) {
+                auto cells_pos = as_tree->GetCellsPos();
+                for (auto &cell_pos : cells_pos) {
+                    dep_graph.AddEdge(pos, cell_pos);
+                }
             }
         }
+    } catch (const CircularDependencyException& ex) {
+        if (prev_val)
+            *cells.at(pos.row).at(pos.col).lock() = *prev_val;
+        throw ex;
     }
 }
 
@@ -200,7 +201,7 @@ void SpreadSheet::ClearCell(Position pos) {
 
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
-        dep_graph.Delete(cell.lock());
+        dep_graph.Delete(pos, cell.lock());
     }
 
     if (pos.col == size.cols - 1) {
@@ -245,7 +246,7 @@ void SpreadSheet::InsertRows(int before, int count) {
     for (int i = 0; i < size.rows; i++) {
         for (auto & el : cells[i]) {
             if (!el.expired()) {
-                if (i > before + count)
+                if (i >= before + count)
                     dep_graph.InvalidOutcoming(el.lock());
                 auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
                 if (formula) {
@@ -296,12 +297,13 @@ void SpreadSheet::DeleteRows(int first, int count) {
         return;
 
     for (int i = 0; i < size.rows; i++){
-        for (auto & el : cells[i]){
+        for (int j = 0; j < size.cols; j++) {
+            auto & el = cells[i][j];
             if (!el.expired()) {
                 if (i >= first + count)
                     dep_graph.InvalidOutcoming(el.lock());
                 else if (i >= first && i < count) {
-                    dep_graph.Delete(el.lock());
+                    dep_graph.Delete({i, j}, el.lock());
                     continue;
                 }
                 auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
@@ -321,13 +323,14 @@ void SpreadSheet::DeleteCols(int first, int count) {
     if (size == Size{0, 0})
         return;
 
-    for (auto & row : cells){
-        for (int j = 0; j < static_cast<int>(row.size()); j++){
+    for (int i = 0; i < size.rows; i++){
+        auto & row = cells[i];
+        for (int j = 0; j < size.cols; j++){
             if (!row[j].expired()) {
                 if (j >= first + count)
                     dep_graph.InvalidOutcoming(row[j].lock());
                 else if (j >= first && j < count) {
-                    dep_graph.Delete(row[j].lock());
+                    dep_graph.Delete({i, j}, row[j].lock());
                     continue;
                 }
                 auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
@@ -347,10 +350,6 @@ void SpreadSheet::DeleteCols(int first, int count) {
 
 Size SpreadSheet::GetPrintableSize() const {
     return size;
-}
-
-DependencyGraph &SpreadSheet::GetGraph() const {
-    return dep_graph;
 }
 
 void SpreadSheet::PrintValues(std::ostream &output) const {

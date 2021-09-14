@@ -617,6 +617,6 @@ int main() {
   RUN_TEST(tr, TestCellReferences);
   RUN_TEST(tr, TestFormulaIncorrect);
 
-//  RUN_TEST(tr, TestCellCircularReferences);
+  RUN_TEST(tr, TestCellCircularReferences);
   return 0;
 }

@@ -168,7 +168,7 @@ public:
     bool operator==(void* ptr) const{
         return cell == ptr;
     }
-    bool operator!=(void * ptr) const{
+    bool operator!=(void* ptr) const{
         return cell != ptr;
     }
     operator ICell*() const{
