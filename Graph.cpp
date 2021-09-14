@@ -170,68 +170,59 @@ void DependencyGraph::ResetPos(Position old_pos, Position new_pos) {
     }
 }
 
+// TODO создаю тут мапу а потом в нее муваю всё что не было перемещено вставкой (тоже самое с удалением)
 void DependencyGraph::InsertRows(int before, int count) {
+    if (cache_cells_located_behind_table.empty())
+        return;
     if (std::prev(cache_cells_located_behind_table.end())->first.row >= Position::kMaxRows - count)
         throw TableTooBigException("can't insert because too big exception");
 
+    std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.row > before + count) {
-            ResetPos(el.first, {el.first.row + count, el.first.col});
+            new_cache[{el.first.row + count, el.first.col}] = std::move(el.second);
+        } else {
+            new_cache[el.first] = std::move(el.second);
         }
     }
-    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
-        if (it->second.cur_val == nullptr){
-            it = cache_cells_located_behind_table.erase(it);
-        } else it++;
-    }
+    std::swap(cache_cells_located_behind_table, new_cache);
 }
 
 void DependencyGraph::InsertCols(int before, int count) {
+    if (cache_cells_located_behind_table.empty())
+        return;
     if (std::prev(cache_cells_located_behind_table.end())->first.col >= Position::kMaxCols - count)
         throw TableTooBigException("can't insert because too big exception");
 
+    std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.col > before + count) {
-            ResetPos(el.first, {el.first.row, el.first.col + count});
+            new_cache[{el.first.row, el.first.col + count}] = std::move(el.second);
+        } else {
+            new_cache[el.first] = std::move(el.second);
         }
     }
-    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
-        if (it->second.cur_val == nullptr){
-            it = cache_cells_located_behind_table.erase(it);
-        } else it++;
-    }
+    std::swap(cache_cells_located_behind_table, new_cache);
 }
 
 void DependencyGraph::DeleteRows(int first, int count) {
+    std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.row >= first && el.first.row < first + count) {
-            el.second.cur_val = nullptr;
-            el.second.old_val = nullptr;
-        } else if (el.first.row > first) {
-            ResetPos(el.first, {el.first.row - count, el.first.col});
+        if (el.first.row > first && el.first.row >= first + count) {
+            new_cache[el.first] = std::move(el.second);
         }
     }
-    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
-        if (it->second.cur_val == nullptr){
-            it = cache_cells_located_behind_table.erase(it);
-        } else it++;
-    }
+    std::swap(cache_cells_located_behind_table, new_cache);
 }
 
 void DependencyGraph::DeleteCols(int first, int count) {
+    std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.col >= first && el.first.col < first + count) {
-            el.second.cur_val = nullptr;
-            el.second.old_val = nullptr;
-        } else if (el.first.row > first) {
-            ResetPos(el.first, {el.first.col, el.first.col - count});
+        if (el.first.col >= first && el.first.col >= first + count) {
+            new_cache[el.first] = std::move(el.second);
         }
     }
-    for (auto it = cache_cells_located_behind_table.begin(); it != cache_cells_located_behind_table.end();){
-        if (it->second.cur_val == nullptr){
-            it = cache_cells_located_behind_table.erase(it);
-        } else it++;
-    }
+    std::swap(cache_cells_located_behind_table, new_cache);
 }
 
 void DependencyGraph::CheckAcyclicity(std::shared_ptr<struct DefaultCell> cell_ptr) {

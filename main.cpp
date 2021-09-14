@@ -585,6 +585,44 @@ namespace {
   }
 }
 
+void TestPascalTriangle(){
+    auto sheet = CreateSheet();
+
+    sheet->SetCell("A1"_pos, "1");
+    sheet->SetCell("A2"_pos, "=A1");
+    sheet->SetCell("A3"_pos, "=A2");
+    sheet->SetCell("A4"_pos, "=A3");
+    sheet->SetCell("A5"_pos, "=A4");
+    sheet->SetCell("A6"_pos, "=A5");
+    sheet->SetCell("A7"_pos, "=A6");
+    sheet->SetCell("A8"_pos, "=A7");
+    sheet->SetCell("A9"_pos, "=A8");
+    sheet->SetCell("A10"_pos, "=A9");
+    sheet->SetCell("A11"_pos, "=A10");
+
+    char letter = 'B';
+    int numb;
+    for (int i = 0; i < 10; i++){
+        numb = i+2;
+        for (int j = 0; j < 10 - i; j++){
+            std::string cell = letter + std::to_string(numb);
+            std::string left_cell = letter + std::to_string(numb - 1);
+            std::string right_cell = char(letter - 1) + std::to_string(numb - 1);
+            sheet->SetCell(operator""_pos(cell.c_str(), cell.size()), std::string("=" + left_cell + "+" + right_cell));
+            numb++;
+        }
+        letter++;
+    }
+
+    ASSERT_EQUAL(sheet->GetCell("F11"_pos)->GetValue(), ICell::Value(252));
+    ASSERT_EQUAL(sheet->GetCell("K11"_pos)->GetValue(), ICell::Value(1));
+    ASSERT_EQUAL(sheet->GetCell("K11"_pos)->GetText(), "=K10+J10");
+
+    sheet->InsertCols(2);
+
+    ASSERT_EQUAL(sheet->GetCell("L11"_pos)->GetValue(), ICell::Value(1));
+}
+
 int main() {
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);
@@ -618,5 +656,8 @@ int main() {
   RUN_TEST(tr, TestFormulaIncorrect);
 
   RUN_TEST(tr, TestCellCircularReferences);
+
+  RUN_TEST(tr, TestPascalTriangle);
+
   return 0;
 }
