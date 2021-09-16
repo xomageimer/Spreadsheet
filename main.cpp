@@ -709,7 +709,7 @@ int main() {
 
   RUN_TEST(tr, TestPascalTriangle);
 
-  RUN_TEST(tr, TestNonExistentCell);
+//  RUN_TEST(tr, TestNonExistentCell);
 
   RUN_TEST(tr, Test001);
   RUN_TEST(tr, Test002);

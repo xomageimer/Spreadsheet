@@ -55,6 +55,7 @@ struct DefaultCell : public ICell {
         return formula_;
     }
 private:
+    Value value;
     std::shared_ptr<DefaultFormula> formula_ = nullptr;
 
     bool AllIsDigits(std::string const & str);
@@ -64,8 +65,8 @@ struct SpreadSheet : public ISheet {
 public:
     void SetCell(Position pos, std::string text) override;
 
-    const ProxyCell GetCell(Position pos) const override;
-    ProxyCell GetCell(Position pos) override;
+    const ICell* GetCell(Position pos) const override;
+    ICell* GetCell(Position pos) override;
 
     void ClearCell(Position pos) override;
 
@@ -88,6 +89,8 @@ private:
     mutable DependencyGraph dep_graph {*this};
 
     Size size {0, 0};
+
+    DefaultCell default_value {"", this};
 };
 
 bool operator<(const Size & lhs, const Position & rhs);

@@ -39,13 +39,13 @@ std::vector<Position> DefaultCell::GetReferencedCells() const {
     return std::vector<Position>{};
 }
 
-DefaultCell::DefaultCell(const std::string &text, ISheet const * sheet) : ICell(ICell::Value(text)) {
+DefaultCell::DefaultCell(const std::string &text, ISheet const * sheet) : value(Value(text)) {
     if (text.size() > 1 && text.front() == '='){
         formula_ = std::make_shared<DefaultFormula>(text.substr(1), sheet);
     } else if (AllIsDigits(text)) {
         if (!text.empty())
-            ICell::value = ICell::Value(std::stod(text));
-        else ICell::value = 0;
+            value = ICell::Value(std::stod(text));
+        else value = 0;
     }
 }
 
@@ -147,7 +147,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     CheckSizeCorrectly(pos);
 
     // TODO мб написать компортаор кт будет игнорировать пробельные символы
-    if (auto cell = GetCell(pos); (cell && cell->GetText() == text))
+    if (auto cell = cells.at(pos.row).at(pos.col).lock(); (cell && cell->GetText() == text))
         return;
 
     std::shared_ptr<DefaultCell> prev_val = nullptr;
@@ -180,16 +180,18 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     }
 }
 
-const ProxyCell SpreadSheet::GetCell(Position pos) const {
-    if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
-        return ProxyCell{nullptr};
-    return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
+const ICell* SpreadSheet::GetCell(Position pos) const {
+    if (!(pos < size))
+        return nullptr;
+    return cells.at(pos.row).at(pos.col).lock().get();
 }
 
-ProxyCell SpreadSheet::GetCell(Position pos) {
-    if (!(pos < size) || cells.at(pos.row).at(pos.col).expired())
-        return ProxyCell{nullptr};
-    return ProxyCell{cells.at(pos.row).at(pos.col).lock().get()};
+ICell* SpreadSheet::GetCell(Position pos) {
+    if (!(pos < size))
+        return nullptr;
+    else if (cells.at(pos.row).at(pos.col).expired())
+        return &default_value;
+    return cells.at(pos.row).at(pos.col).lock().get();
 }
 
 void SpreadSheet::ClearCell(Position pos) {
