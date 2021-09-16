@@ -145,31 +145,6 @@ void DependencyGraph::InvalidOutcoming(Position pos) {
         InvalidOutcoming(cache_cells_located_behind_table.at(pos).cur_val);
 }
 
-void DependencyGraph::ResetPos(Position old_pos, Position new_pos) {
-    if (old_pos == new_pos)
-        return;
-
-    if (IsExist(old_pos)) {
-        bool to_erase = true;
-        auto value = cache_cells_located_behind_table.at(old_pos).cur_val;
-        if (cache_cells_located_behind_table.at(old_pos).old_val) {
-            value = std::move(cache_cells_located_behind_table.at(old_pos).old_val);
-            to_erase = false;
-        }
-
-        if (IsExist(new_pos)) {
-            cache_cells_located_behind_table.at(new_pos).old_val = cache_cells_located_behind_table.at(new_pos).cur_val;
-            cache_cells_located_behind_table.at(new_pos).cur_val = value;
-        } else {
-            cache_cells_located_behind_table[new_pos].cur_val = value;
-        }
-        if (to_erase) {
-            cache_cells_located_behind_table[old_pos].cur_val = nullptr;
-            cache_cells_located_behind_table[old_pos].old_val = nullptr;
-        }
-    }
-}
-
 // TODO создаю тут мапу а потом в нее муваю всё что не было перемещено вставкой (тоже самое с удалением)
 void DependencyGraph::InsertRows(int before, int count) {
     if (cache_cells_located_behind_table.empty())

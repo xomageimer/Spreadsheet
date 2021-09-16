@@ -59,7 +59,7 @@ DefaultFormula::DefaultFormula(std::string const & val, const ISheet * sheet) : 
     BuildAST(val);
 }
 
-std::unique_ptr<IFormula> ParseFormula(const std::string& expression) {
+std::unique_ptr<IFormula> ParseFormula(std::string expression) {
     auto formula = std::make_unique<DefaultFormula>(expression);
     return formula;
 }
@@ -388,7 +388,7 @@ void SpreadSheet::PrintTexts(std::ostream &output) const {
 }
 
 void SpreadSheet::CheckSizeCorrectly(Position pos) {
-    if (!size || size < pos) {
+    if (size == Size{0, 0} || size < pos) {
         if (!size.rows || pos.row >= size.rows) {
             if (size.rows == Position::kMaxRows)
                 throw TableTooBigException("The number of rows is greater/equal than the maximum");

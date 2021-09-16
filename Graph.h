@@ -28,7 +28,6 @@ public:
 
     std::weak_ptr<struct DefaultCell> AddVertex(Position pos, std::shared_ptr<struct DefaultCell> new_cell);
     bool IsExist(Position pos);
-    void ResetPos(Position old_pos, Position new_pos);
     void AddEdge(Position par_pos, Position child_pos);
 
     bool Delete(Position pos, const std::shared_ptr<struct DefaultCell>& cell_ptr);

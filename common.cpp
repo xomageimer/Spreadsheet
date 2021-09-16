@@ -8,6 +8,7 @@
         throw InvalidPositionException("Invalid position");   \
     }                                                         \
 }
+#define BadPosition (-1)
 
 const int ALPHA_SIZE = 26;
 Position Position::FromString(std::string_view str) {
@@ -35,10 +36,10 @@ Position Position::FromString(std::string_view str) {
         CheckPosException(col >= 0 && row >= 0);
         CheckPosException(col < kMaxCols && row < kMaxRows);
     } catch (...) {
-        return {row, col, STATUS::ERROR};
+        return {BadPosition, BadPosition};
     }
 
-    return {row, col, STATUS::VALID};
+    return {row, col};
 }
 
 std::string Position::ToString() const {
@@ -57,16 +58,13 @@ std::string Position::ToString() const {
 }
 
 bool Position::IsValid() const {
-    if (status == STATUS::NONE) {
-        status = STATUS::VALID;
-        try {
-            CheckPosException(col >= 0 && row >= 0);
-            CheckPosException(col < kMaxCols && row < kMaxRows);
-        } catch (...) {
-            status = STATUS::ERROR;
-        }
+    try {
+        CheckPosException(col >= 0 && row >= 0);
+        CheckPosException(col < kMaxCols && row < kMaxRows);
+        return true;
+    } catch (...) {
+        return false;
     }
-    return status == STATUS::VALID;
 }
 
 bool Position::operator==(const Position &rhs) const {
@@ -79,10 +77,6 @@ bool Position::operator<(const Position &rhs) const {
 
 bool Size::operator==(const Size &rhs) const {
     return rows == rhs.rows && cols == rhs.cols;
-}
-
-Size::operator bool() const {
-    return cols != 0 && rows != 0;
 }
 
 bool operator<(const Size &lhs, const Position &rhs) {
@@ -125,6 +119,8 @@ std::string_view FormulaError::ToString() const {
     };
     return categories.at(category_);
 }
+
+FormulaError::FormulaError(FormulaError::Category category)  : category_(category) {}
 
 std::ostream &operator<<(std::ostream &output, FormulaError fe) {
     output << fe.ToString();

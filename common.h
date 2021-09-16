@@ -15,11 +15,6 @@
 struct Position {
   int row = 0;
   int col = 0;
-  enum class STATUS {
-      ERROR,
-      NONE,
-      VALID
-  } mutable status = STATUS::NONE;
 
   bool operator==(const Position& rhs) const;
   bool operator<(const Position& rhs) const;
@@ -38,14 +33,7 @@ struct Size {
   int cols = 0;
 
   bool operator==(const Size& rhs) const;
-  operator bool() const;
 };
-bool operator<(const Size & lhs, const Position & rhs);
-bool operator<(const Position & lhs, const Size & rhs);
-bool operator>(const Size & lhs, const Position & rhs);
-bool operator>(const Position & lhs, const Size & rhs);
-bool operator==(const Size & lhs, const Position & rhs);
-bool operator==(const Position & lhs, const Size & rhs);
 
 // Описывает ошибки, которые могут возникнуть при вычислении формулы.
 class FormulaError {
@@ -56,7 +44,7 @@ public:
     Div0,  // в результате вычисления возникло деление на ноль
   };
 
-  FormulaError(Category category) : category_(category) {};
+  FormulaError(Category category);
 
   [[nodiscard]] Category GetCategory() const;
 

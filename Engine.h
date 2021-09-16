@@ -10,9 +10,15 @@
 #include "formula.h"
 
 struct DefaultFormula : public IFormula {
+    enum class Status {
+        Invalid,
+        Error,
+        Valid
+    } mutable status = Status::Invalid;
+
     explicit DefaultFormula(std::string const & val, const ISheet * sheet = nullptr);
 
-    Value GetValue() const override;
+    Value GetValue() const;
 
     IFormula::Value Evaluate(const ISheet& sheet) const override;
 
@@ -28,8 +34,9 @@ struct DefaultFormula : public IFormula {
 
     const std::optional<AST::ASTree> & GetAST() const;
 
-    friend std::unique_ptr<IFormula> ParseFormula(const std::string& expression);
+    friend std::unique_ptr<IFormula> ParseFormula(std::string expression);
 protected:
+    mutable Value evaluated_value;
     mutable std::optional<AST::ASTree> as_tree;
     const ISheet * sheet_;
 
@@ -44,11 +51,11 @@ struct DefaultCell : public ICell {
 
     [[nodiscard]] std::vector<Position> GetReferencedCells() const override;
 
-    [[nodiscard]] std::shared_ptr<IFormula> GetFormula() const {
+    [[nodiscard]] std::shared_ptr<DefaultFormula> GetFormula() const {
         return formula_;
     }
 private:
-    std::shared_ptr<IFormula> formula_ = nullptr;
+    std::shared_ptr<DefaultFormula> formula_ = nullptr;
 
     bool AllIsDigits(std::string const & str);
 };
@@ -82,6 +89,13 @@ private:
 
     Size size {0, 0};
 };
+
+bool operator<(const Size & lhs, const Position & rhs);
+bool operator<(const Position & lhs, const Size & rhs);
+bool operator>(const Size & lhs, const Position & rhs);
+bool operator>(const Position & lhs, const Size & rhs);
+bool operator==(const Size & lhs, const Position & rhs);
+bool operator==(const Position & lhs, const Size & rhs);
 
 
 #endif //SPREADSHEET_ENGINE_H

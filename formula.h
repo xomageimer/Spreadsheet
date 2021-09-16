@@ -25,15 +25,7 @@ public:
                        // была непосредственная ссылка)
   };
 
-  enum class Status {
-      Invalid,
-      Error,
-      Valid
-  } mutable status = Status::Invalid;
-
   virtual ~IFormula() = default;
-
-  virtual Value GetValue() const = 0;
   // Возвращает вычисленное значение формулы для переданного листа, либо ошибку.
   // Если вычисление какой-то из указанных в формуле ячеек приводит к ошибке, то
   // возвращается именно эта ошибка. Если таких ошибок несколько, возвращается
@@ -65,10 +57,8 @@ public:
   // FormulaError::Ref. Попытка вычислить такую формулу вернёт эту же ошибку.
   virtual HandlingResult HandleDeletedRows(int first, int count = 1) = 0;
   virtual HandlingResult HandleDeletedCols(int first, int count = 1) = 0;
-protected:
-    mutable Value evaluated_value;
 };
 
 // Парсит переданное выражение и возвращает объект формулы.
 // Бросает FormulaException в случае если формула синтаксически некорректна.
-std::unique_ptr<IFormula> ParseFormula(const std::string& expression);
+std::unique_ptr<IFormula> ParseFormula(std::string expression);
