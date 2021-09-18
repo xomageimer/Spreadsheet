@@ -24,7 +24,7 @@ IFormula::Value Cell::Evaluate(const ISheet & sheet) const {
     }
     auto cell = sheet.GetCell(pos_);
     if (!cell)
-        return 0;
+        return static_cast<double>(0.0);
 
     auto cell_val = cell->GetValue();
     if (std::holds_alternative<std::string>(cell_val)){

@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#include <algorithm>
+#include <memory>
 #include <map>
 #include <vector>
 #include <unordered_map>

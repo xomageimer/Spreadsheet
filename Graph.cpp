@@ -40,8 +40,8 @@ bool DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
         vertexes.erase(cell_ptr);
         return true;
     } else {
-        auto it = cache_cells_located_behind_table.emplace(pos, CacheVertex{std::make_shared<DefaultCell>(""), nullptr});
-        vertexes[it.first->second.cur_val] = vertexes[cell_ptr];
+        auto null_it = cache_cells_located_behind_table.emplace(pos, CacheVertex{std::make_shared<DefaultCell>(""), nullptr});
+        vertexes[null_it.first->second.cur_val] = vertexes[cell_ptr];
         vertexes.erase(cell_ptr);
     }
     return false;

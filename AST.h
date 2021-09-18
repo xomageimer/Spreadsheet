@@ -4,6 +4,8 @@
 #include <utility>
 #include <stack>
 #include <sstream>
+#include <map>
+#include <algorithm>
 
 #include "common.h"
 #include "formula.h"

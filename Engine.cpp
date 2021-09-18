@@ -45,7 +45,7 @@ DefaultCell::DefaultCell(const std::string &text, ISheet const * sheet) : value(
     } else if (AllIsDigits(text)) {
         if (!text.empty())
             value = ICell::Value(std::stod(text));
-        else value = 0;
+        else value = static_cast<double>(0.0);
     }
 }
 
@@ -413,3 +413,5 @@ void SpreadSheet::CheckSizeCorrectly(Position pos) {
         }
     }
 }
+
+SpreadSheet::SpreadSheet() : dep_graph(*this), size(Size{0, 0}), default_value("", this) {}

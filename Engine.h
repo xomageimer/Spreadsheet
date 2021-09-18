@@ -1,6 +1,12 @@
 #ifndef SPREADSHEET_ENGINE_H
 #define SPREADSHEET_ENGINE_H
 
+#include <sstream>
+#include <string>
+#include <variant>
+#include <memory>
+#include <optional>
+#include <vector>
 #include <unordered_map>
 #include <utility>
 
@@ -63,6 +69,7 @@ private:
 
 struct SpreadSheet : public ISheet {
 public:
+    SpreadSheet();
     void SetCell(Position pos, std::string text) override;
 
     const ICell* GetCell(Position pos) const override;
@@ -86,11 +93,11 @@ private:
     friend DependencyGraph;
 
     std::vector<std::vector<std::weak_ptr<DefaultCell>>> cells {};
-    mutable DependencyGraph dep_graph {*this};
+    mutable DependencyGraph dep_graph;
 
-    Size size {0, 0};
+    Size size;
 
-    DefaultCell default_value {"", this};
+    DefaultCell default_value;
 };
 
 bool operator<(const Size & lhs, const Position & rhs);
