@@ -100,6 +100,7 @@ private:
 
     DefaultCell default_value;
 };
+//TODO исправить утечку памяти! (мб не работает DELETE)
 
 bool operator<(const Size & lhs, const Position & rhs);
 bool operator<(const Position & lhs, const Size & rhs);

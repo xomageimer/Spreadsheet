@@ -674,6 +674,16 @@ void Test006() {
 }
 
 int main() {
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=F7+5");
+    sheet->SetCell("F7"_pos, "-17");
+    sheet->PrintValues(std::cout);
+    std::cout << "----------------------" << std::endl;
+    sheet->SetCell("A1"_pos, "=B2");
+    sheet->ClearCell("F7"_pos);
+    sheet->PrintValues(std::cout);
+
+
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);
   RUN_TEST(tr, TestPositionToStringInvalid);

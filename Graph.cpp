@@ -15,7 +15,7 @@ std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(Position pos, std::shared_
     }
 }
 
-bool DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& cell_ptr) {
+void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& cell_ptr) {
     auto it = vertexes.find(cell_ptr);
     for (auto & el : it->second.incoming_ids) {
         auto child = vertexes.find(incoming.at(el).to.lock());
@@ -36,15 +36,13 @@ bool DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
             }
         }
     }
-    if (outcoming.empty()) {
+    if (vertexes.at(cell_ptr).outcoming_ids.empty()) {
         vertexes.erase(cell_ptr);
-        return true;
     } else {
-        auto null_it = cache_cells_located_behind_table.emplace(pos, CacheVertex{std::make_shared<DefaultCell>(""), nullptr});
+        auto null_it = cache_cells_located_behind_table.emplace(pos, CacheVertex{std::make_shared<DefaultCell>("")});
         vertexes[null_it.first->second.cur_val] = vertexes[cell_ptr];
         vertexes.erase(cell_ptr);
     }
-    return false;
 }
 
 void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
@@ -60,7 +58,7 @@ void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
     auto par_cell = par_cell_weak.lock();
 
     if (!(spread_sheet->size > child_pos) || (spread_sheet->cells[child_pos.row][child_pos.col].expired() && !IsExist(child_pos))){
-        auto it = cache_cells_located_behind_table.emplace(child_pos, CacheVertex{std::make_shared<DefaultCell>(""), nullptr});
+        auto it = cache_cells_located_behind_table.emplace(child_pos, CacheVertex{std::make_shared<DefaultCell>("")});
         vertexes.emplace(it.first->second.cur_val, Edges{});
     } else {
         child_cell_weak = spread_sheet->cells[child_pos.row][child_pos.col];

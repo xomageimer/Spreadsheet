@@ -51,7 +51,9 @@ DefaultCell::DefaultCell(const std::string &text, ISheet const * sheet) : value(
 bool DefaultCell::AllIsDigits(const std::string &str) {
     return std::all_of(str.begin(), str.end(), [](auto c) {
         return std::isdigit(c);
-    });
+    }) || (str.size() > 1 && (str.front() == '-' || str.front() == '+') && std::all_of(std::next(str.begin()), str.end(), [](auto c) {
+        return std::isdigit(c);
+    }));
 }
 
 DefaultFormula::DefaultFormula(std::string const & val, const ISheet * sheet) : sheet_(sheet) {

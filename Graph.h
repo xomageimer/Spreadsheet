@@ -22,7 +22,6 @@ struct Edges {
 
 struct CacheVertex {
     std::shared_ptr<struct DefaultCell> cur_val;
-    std::shared_ptr<struct DefaultCell> old_val = nullptr;
 };
 
 struct DependencyGraph {
@@ -33,7 +32,7 @@ public:
     bool IsExist(Position pos);
     void AddEdge(Position par_pos, Position child_pos);
 
-    bool Delete(Position pos, const std::shared_ptr<struct DefaultCell>& cell_ptr);
+    void Delete(Position pos, const std::shared_ptr<struct DefaultCell>& cell_ptr);
     void Delete(Position pos);
 
     void InsertRows(int before, int count);
