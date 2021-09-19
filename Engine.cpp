@@ -4,16 +4,15 @@
 
 
 ICell::Value DefaultCell::GetValue() const {
-    if (formula_) {
+     if (formula_ && formula_->status != DefaultFormula::Status::Valid) {
         auto eval_val = formula_->GetValue();
         if (std::holds_alternative<double>(eval_val))
-            return std::get<double>(eval_val);
+            value = std::get<double>(eval_val);
         else
-            return std::get<FormulaError>(eval_val);
-    }
-    else if (std::holds_alternative<std::string>(value)
-            && std::get<std::string>(value).front() == kEscapeSign) {
-            return ICell::Value(std::get<std::string>(value).substr(1));
+            value = std::get<FormulaError>(eval_val);
+    } else if (std::holds_alternative<std::string>(value)
+        && std::get<std::string>(value).front() == kEscapeSign) {
+        return ICell::Value(std::get<std::string>(value).substr(1));
     }
     return value;
 }
@@ -65,13 +64,11 @@ std::unique_ptr<IFormula> ParseFormula(std::string expression) {
 }
 
 IFormula::Value DefaultFormula::GetValue() const {
-    if (status == Status::Invalid) {
-        evaluated_value = Evaluate(*sheet_);
-    }
-    if (std::holds_alternative<double>(evaluated_value))
-        return IFormula::Value(std::get<double>(evaluated_value));
+    auto val = Evaluate(*sheet_);
+    if (status == Status::Error)
+        return GetError();
     else
-        return IFormula::Value(std::get<FormulaError>(evaluated_value));
+        return val;
 }
 
 std::vector<Position> DefaultFormula::GetReferencedCells() const {
@@ -83,17 +80,13 @@ std::string DefaultFormula::GetExpression() const {
 }
 
 IFormula::Value DefaultFormula::Evaluate(const ISheet &sheet) const {
-    if (status == Status::Error)
-        return evaluated_value;
-
     IFormula::Value val;
     try {
         val = as_tree->Evaluate(sheet);
         status = Status::Valid;
     } catch (FormulaError & fe) {
         status = Status::Error;
-
-        evaluated_value = fe;
+        error = fe;
     }
     return val;
 }
@@ -126,17 +119,20 @@ void DefaultFormula::BuildAST(std::string const & text) const {
     if (!as_tree || (as_tree && as_tree->GetCellsPos().empty())) {
         try {
             std::stringstream ss(text);
-            as_tree.emplace(AST::ParseFormula(ss, *sheet_));
+            as_tree = std::make_shared<AST::ASTree>(AST::ParseFormula(ss, *sheet_));
         } catch (FormulaError & fe) {
             status = Status::Error;
-
-            evaluated_value = fe;
+            error = fe;
         }
     }
 }
 
-const std::optional<AST::ASTree> &DefaultFormula::GetAST() const {
+const std::shared_ptr<AST::ASTree> DefaultFormula::GetAST() const {
     return as_tree;
+}
+
+FormulaError DefaultFormula::GetError() const {
+    return error;
 }
 
 void SpreadSheet::SetCell(Position pos, std::string text) {
@@ -164,7 +160,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 
     try {
         if (val->GetFormula()) {
-            auto &as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
+            auto & as_tree = dynamic_cast<DefaultFormula const *>(val->GetFormula().get())->GetAST();
 
             if (as_tree) {
                 auto cells_pos = as_tree->GetCellsPos();

@@ -5,7 +5,6 @@
 #include <string>
 #include <variant>
 #include <memory>
-#include <optional>
 #include <vector>
 #include <unordered_map>
 #include <utility>
@@ -26,6 +25,8 @@ struct DefaultFormula : public IFormula {
 
     Value GetValue() const;
 
+    FormulaError GetError() const;
+
     IFormula::Value Evaluate(const ISheet& sheet) const override;
 
     std::string GetExpression() const override;
@@ -38,12 +39,12 @@ struct DefaultFormula : public IFormula {
     HandlingResult HandleDeletedRows(int first, int count = 1) override;
     HandlingResult HandleDeletedCols(int first, int count = 1) override;
 
-    const std::optional<AST::ASTree> & GetAST() const;
+    const std::shared_ptr<AST::ASTree> GetAST() const;
 
     friend std::unique_ptr<IFormula> ParseFormula(std::string expression);
 protected:
-    mutable Value evaluated_value;
-    mutable std::optional<AST::ASTree> as_tree;
+    mutable FormulaError error {FormulaError::Category::Ref};
+    mutable std::shared_ptr<AST::ASTree> as_tree;
     const ISheet * sheet_;
 
     void BuildAST(std::string const & text) const;
@@ -61,7 +62,7 @@ struct DefaultCell : public ICell {
         return formula_;
     }
 private:
-    Value value;
+    mutable Value value;
     std::shared_ptr<DefaultFormula> formula_ = nullptr;
 
     bool AllIsDigits(std::string const & str);
