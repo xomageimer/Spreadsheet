@@ -204,34 +204,7 @@ void SpreadSheet::ClearCell(Position pos) {
         dep_graph.Delete(pos, cell.lock());
     }
 
-    if (pos.col == size.cols - 1) {
-        std::optional<int> max_pos;
-        for (int i = pos.col; i >= 0; i--) {
-            for (int j = 0; j < static_cast<int>(size.rows); j++) {
-                if (!cells[j][i].expired() && (!max_pos || i > max_pos.value())) {
-                    max_pos.emplace(i);
-                    break;
-                }
-            }
-        }
-        for (auto & raw : cells) {
-            raw.erase(raw.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), raw.end());
-        }
-        size.cols = (!max_pos) ? 0 : (*max_pos + 1);
-    }
-    if (pos.row == size.rows - 1) {
-        std::optional<int> max_pos;
-        for (int j = size.rows - 1; j >= 0; j--){
-            for (int i = 0; i < static_cast<int>(size.cols); i++){
-                if (!cells[j][i].expired() && (!max_pos || j > max_pos.value())) {
-                    max_pos.emplace(j);
-                    break;
-                }
-            }
-        }
-        cells.erase(cells.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), cells.end());
-        size.rows = (!max_pos) ? 0 : (*max_pos + 1);
-    }
+    TryToCompress(pos);
 }
 
 void SpreadSheet::InsertRows(int before, int count) {
@@ -317,6 +290,9 @@ void SpreadSheet::DeleteRows(int first, int count) {
 
     cells.erase(cells.begin() + first, cells.begin() + first + count);
     size.rows = (size.rows >= count) ? size.rows - count : 0;
+    if (auto pos = Position{size.rows - 1, size.cols - 1}; cells.at(pos.row).at(pos.col).expired()){
+        TryToCompress(pos);
+    }
 }
 
 void SpreadSheet::DeleteCols(int first, int count) {
@@ -346,6 +322,9 @@ void SpreadSheet::DeleteCols(int first, int count) {
         row.erase(row.begin() + first, row.begin() + first + count);
     }
     size.cols = (size.cols >= count) ? size.cols - count : 0;
+    if (auto pos = Position{size.rows - 1, size.cols - 1}; cells.at(pos.row).at(pos.col).expired()){
+        TryToCompress(pos);
+    }
 }
 
 Size SpreadSheet::GetPrintableSize() const {
@@ -413,3 +392,34 @@ void SpreadSheet::CheckSizeCorrectly(Position pos) {
 }
 
 SpreadSheet::SpreadSheet() : dep_graph(*this), size(Size{0, 0}), default_value("", this) {}
+
+void SpreadSheet::TryToCompress(Position from_pos) {
+    if (from_pos.col == size.cols - 1) {
+        std::optional<int> max_pos;
+        for (int i = from_pos.col; i >= 0; i--) {
+            for (int j = 0; j < static_cast<int>(size.rows); j++) {
+                if (!cells[j][i].expired() && (!max_pos || i > max_pos.value())) {
+                    max_pos.emplace(i);
+                    break;
+                }
+            }
+        }
+        for (auto & raw : cells) {
+            raw.erase(raw.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), raw.end());
+        }
+        size.cols = (!max_pos) ? 0 : (*max_pos + 1);
+    }
+    if (from_pos.row == size.rows - 1) {
+        std::optional<int> max_pos;
+        for (int j = size.rows - 1; j >= 0; j--){
+            for (int i = 0; i < static_cast<int>(size.cols); i++){
+                if (!cells[j][i].expired() && (!max_pos || j > max_pos.value())) {
+                    max_pos.emplace(j);
+                    break;
+                }
+            }
+        }
+        cells.erase(cells.begin() + ((!max_pos) ? 0 : (*max_pos + 1)), cells.end());
+        size.rows = (!max_pos) ? 0 : (*max_pos + 1);
+    }
+}

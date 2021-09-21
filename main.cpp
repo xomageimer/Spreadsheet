@@ -674,15 +674,30 @@ void Test006() {
 }
 
 int main() {
-    auto sheet = CreateSheet();
-    sheet->SetCell("A1"_pos, "=F7+5");
-    sheet->SetCell("F7"_pos, "-17");
-    sheet->PrintValues(std::cout);
-    std::cout << "----------------------" << std::endl;
-    sheet->SetCell("A1"_pos, "=B2");
-    sheet->ClearCell("F7"_pos);
-    sheet->PrintValues(std::cout);
+    // TODO тут ошибка
+//    auto sheet = CreateSheet();
+//    sheet->SetCell("A1"_pos, "=F7+5");
+////    sheet->SetCell("F7"_pos, "-17");
+//    sheet->SetCell("A2"_pos, "5");
+//    sheet->SetCell("A5"_pos, "11");
+//    sheet->PrintValues(std::cout);
+//    std::cout << "----------------------" << std::endl;
+//    sheet->SetCell("A1"_pos, "=B2"); // TODO F7 не удаляется
+//    sheet->SetCell("B1"_pos, "NIGGER");
+////    sheet->ClearCell("F7"_pos);
+//    sheet->DeleteCols(0);
+//    sheet->PrintValues(std::cout);
 
+
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "=1");
+    sheet->SetCell("A2"_pos, "=A1");
+    sheet->SetCell("A3"_pos, "=A2");
+    sheet->DeleteRows(0);
+
+    sheet->SetCell("B1"_pos, "=1/0");
+    sheet->SetCell("A2"_pos, "=A1+B1");
+    sheet->PrintValues(std::cout);
 
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);

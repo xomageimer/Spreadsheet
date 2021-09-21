@@ -90,6 +90,7 @@ public:
     void PrintTexts(std::ostream& output) const override;
 private:
     void CheckSizeCorrectly(Position pos);
+    void TryToCompress(Position from_pos);
 
     friend DependencyGraph;
 

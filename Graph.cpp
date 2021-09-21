@@ -30,9 +30,11 @@ void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
     auto child_cells = cell_ptr->GetReferencedCells();
     for (auto & child : child_cells) {
         if (auto child_it = cache_cells_located_behind_table.find(child); child_it != cache_cells_located_behind_table.end()){
-            if (vertexes.at(child_it->second.cur_val).outcoming_ids.empty()) {
-                Delete(child);
+            if (child_it->second.cur_val && vertexes.at(child_it->second.cur_val).outcoming_ids.empty()) {
                 vertexes.erase(child_it->second.cur_val);
+                Delete(child);
+            } else {
+                Delete(child);
             }
         }
     }
@@ -183,6 +185,8 @@ void DependencyGraph::DeleteRows(int first, int count) {
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.row > first && el.first.row >= first + count) {
             new_cache[el.first] = std::move(el.second);
+        } else {
+            vertexes.erase(new_cache[el.first].cur_val);
         }
     }
     std::swap(cache_cells_located_behind_table, new_cache);
@@ -193,6 +197,8 @@ void DependencyGraph::DeleteCols(int first, int count) {
     for (auto & el : cache_cells_located_behind_table){
         if (el.first.col >= first && el.first.col >= first + count) {
             new_cache[el.first] = std::move(el.second);
+        } else {
+            vertexes.erase(new_cache[el.first].cur_val);
         }
     }
     std::swap(cache_cells_located_behind_table, new_cache);
