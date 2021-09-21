@@ -202,9 +202,8 @@ void SpreadSheet::ClearCell(Position pos) {
     if (auto cell = cells.at(pos.row).at(pos.col); !cell.expired()) {
         dep_graph.InvalidOutcoming(cell.lock());
         dep_graph.Delete(pos, cell.lock());
+        TryToCompress(pos);
     }
-
-    TryToCompress(pos);
 }
 
 void SpreadSheet::InsertRows(int before, int count) {

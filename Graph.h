@@ -51,6 +51,7 @@ private:
 
     std::unordered_map<int, Edge> outcoming;
     std::unordered_map<int, Edge> incoming;
+    int c = 0;
 
     ISheet & sheet;
 

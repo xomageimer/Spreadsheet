@@ -29,7 +29,7 @@ void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
     }
     auto child_cells = cell_ptr->GetReferencedCells();
     for (auto & child : child_cells) {
-        if (auto child_it = cache_cells_located_behind_table.find(child); child_it != cache_cells_located_behind_table.end()){
+        if (auto child_it = cache_cells_located_behind_table.find(child); child_it != cache_cells_located_behind_table.end()) {
             if (child_it->second.cur_val && vertexes.at(child_it->second.cur_val).outcoming_ids.empty()) {
                 vertexes.erase(child_it->second.cur_val);
                 Delete(child);
@@ -41,13 +41,17 @@ void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
     if (vertexes.at(cell_ptr).outcoming_ids.empty()) {
         vertexes.erase(cell_ptr);
     } else {
-        auto null_it = cache_cells_located_behind_table.emplace(pos, CacheVertex{std::make_shared<DefaultCell>("")});
-        vertexes[null_it.first->second.cur_val] = vertexes[cell_ptr];
-        vertexes.erase(cell_ptr);
+        *cell_ptr = DefaultCell("");
+        cache_cells_located_behind_table.emplace(pos, CacheVertex{cell_ptr});
     }
 }
 
 void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
+    if (outcoming.empty() && incoming.empty())
+        c = 0;
+    if (c == INT_MAX)
+        throw std::logic_error("table memory exceeded!");
+
     auto spread_sheet = dynamic_cast<SpreadSheet * const>(&sheet);
     if (!spread_sheet)
         throw std::bad_cast();
@@ -67,17 +71,16 @@ void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
     }
     auto child_cell = (!child_cell_weak.expired()) ? vertexes.find(child_cell_weak.lock())->first : cache_cells_located_behind_table.at(child_pos).cur_val;
 
-    size_t edge_id = outcoming.size();
+    size_t edge_id = c;
     auto out_it = outcoming.emplace(edge_id, Edge{child_cell, par_cell});
     vertexes.at(child_cell).outcoming_ids.push_back(edge_id);
 
-    edge_id = incoming.size();
+    edge_id = c++;
     auto in_it = incoming.emplace(edge_id, Edge{par_cell, child_cell});
     vertexes.at(par_cell).incoming_ids.push_back(edge_id);
 
     try {
-        CheckAcyclicity(par_cell);  // TODO мб чекать incoming
-//        CheckAcyclicity(child_cell);
+        CheckAcyclicity(par_cell);
     } catch (const CircularDependencyException& excp) {
         outcoming.erase(out_it.first);
         incoming.erase(in_it.first);

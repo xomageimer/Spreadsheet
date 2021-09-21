@@ -674,7 +674,61 @@ void Test006() {
 }
 
 int main() {
-    // TODO тут ошибка
+    // TODO ClearCell работает неверно (не удаляет A1 и A2)
+//    auto sheet = CreateSheet();
+//    sheet->SetCell("A1"_pos, "1");
+//    sheet->SetCell("A2"_pos, "=A1");
+//    sheet->SetCell("A3"_pos, "=A2");
+//    sheet->SetCell("B1"_pos, "=A1+A2");
+//    sheet->SetCell("B2"_pos, "=A2+A3");
+//    sheet->PrintValues(std::cout);
+//    sheet->ClearCell("A1"_pos);
+//    sheet->ClearCell("A2"_pos);
+//    sheet->ClearCell("A3"_pos);
+//    sheet->ClearCell("B1"_pos);
+//    sheet->ClearCell("B2"_pos);
+//    std::cout << std::endl;
+//    sheet->PrintValues(std::cout);
+
+//    sheet->SetCell("A1"_pos, "1");
+//    sheet->SetCell("A2"_pos, "=A1");
+//    sheet->SetCell("A3"_pos, "=A2");
+//    sheet->SetCell("A4"_pos, "=A3");
+//    sheet->SetCell("A5"_pos, "=A4");
+//    sheet->SetCell("A6"_pos, "=A5");
+//    sheet->SetCell("A7"_pos, "=A6");
+//    sheet->SetCell("A8"_pos, "=A7");
+//    sheet->SetCell("A9"_pos, "=A8");
+//    sheet->SetCell("A10"_pos, "=A9");
+//    sheet->SetCell("A11"_pos, "=A10");
+//
+//    char letter = 'B';
+//    int numb;
+//    for (int i = 0; i < 10; i++){
+//        numb = i+2;
+//        for (int j = 0; j < 10 - i; j++){
+//            std::string cell = letter + std::to_string(numb);
+//            std::string left_cell = letter + std::to_string(numb - 1);
+//            std::string right_cell = char(letter - 1) + std::to_string(numb - 1);
+//            sheet->SetCell(operator""_pos(cell.c_str(), cell.size()), std::string("=" + left_cell + "+" + right_cell));
+//            numb++;
+//        }
+//        letter++;
+//    }
+//    sheet->PrintValues(std::cout);
+//
+//    letter = 'A';
+//    for (int i = 0; i < 10; i++){
+//        numb = i+1;
+//        for (int j = 0; j < 10 - i; j++){
+//            std::string cell = letter + std::to_string(numb);
+//            sheet->ClearCell(operator""_pos(cell.c_str(), cell.size()));
+//            numb++;
+//        }
+//        letter++;
+//    }
+//    sheet->PrintValues(std::cout);
+
 //    auto sheet = CreateSheet();
 //    sheet->SetCell("A1"_pos, "=F7+5");
 ////    sheet->SetCell("F7"_pos, "-17");
@@ -689,15 +743,15 @@ int main() {
 //    sheet->PrintValues(std::cout);
 
 
-    auto sheet = CreateSheet();
-    sheet->SetCell("A1"_pos, "=1");
-    sheet->SetCell("A2"_pos, "=A1");
-    sheet->SetCell("A3"_pos, "=A2");
-    sheet->DeleteRows(0);
-
-    sheet->SetCell("B1"_pos, "=1/0");
-    sheet->SetCell("A2"_pos, "=A1+B1");
-    sheet->PrintValues(std::cout);
+//    auto sheet = CreateSheet();
+//    sheet->SetCell("A1"_pos, "=1");
+//    sheet->SetCell("A2"_pos, "=A1");
+//    sheet->SetCell("A3"_pos, "=A2");
+//    sheet->DeleteRows(0);
+//
+//    sheet->SetCell("B1"_pos, "=1/0");
+//    sheet->SetCell("A2"_pos, "=A1+B1");
+//    sheet->PrintValues(std::cout);
 
   TestRunner tr;
   RUN_TEST(tr, TestPositionAndStringConversion);
