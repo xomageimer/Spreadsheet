@@ -17,23 +17,26 @@ std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(Position pos, std::shared_
 
 void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& cell_ptr) {
     auto it = vertexes.find(cell_ptr);
-    for (auto & el : it->second.incoming_ids) {
+    for (auto el : it->second.incoming_ids) {
         auto child = vertexes.find(incoming.at(el).to.lock());
+        auto ptr_child = child->first;
         auto & out_from_child = child->second.outcoming_ids;
         auto to_del = std::find_if(out_from_child.begin(), out_from_child.end(), [&](auto id) {
             return outcoming[id].to.lock() == it->first;
         });
+        auto num_del = *to_del;
         outcoming.erase(*to_del);
         out_from_child.erase(to_del);
         incoming.erase(el);
     }
+    it->second.incoming_ids.clear();
     auto child_cells = cell_ptr->GetReferencedCells();
     for (auto & child : child_cells) {
         if (auto child_it = cache_cells_located_behind_table.find(child); child_it != cache_cells_located_behind_table.end()) {
             if (child_it->second.cur_val && vertexes.at(child_it->second.cur_val).outcoming_ids.empty()) {
                 vertexes.erase(child_it->second.cur_val);
                 Delete(child);
-            } else {
+            } else if (vertexes.at(child_it->second.cur_val).outcoming_ids.empty()) {
                 Delete(child);
             }
         }

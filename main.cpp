@@ -675,20 +675,20 @@ void Test006() {
 
 int main() {
     // TODO ClearCell работает неверно (не удаляет A1 и A2)
-//    auto sheet = CreateSheet();
-//    sheet->SetCell("A1"_pos, "1");
-//    sheet->SetCell("A2"_pos, "=A1");
-//    sheet->SetCell("A3"_pos, "=A2");
-//    sheet->SetCell("B1"_pos, "=A1+A2");
-//    sheet->SetCell("B2"_pos, "=A2+A3");
-//    sheet->PrintValues(std::cout);
-//    sheet->ClearCell("A1"_pos);
-//    sheet->ClearCell("A2"_pos);
-//    sheet->ClearCell("A3"_pos);
-//    sheet->ClearCell("B1"_pos);
-//    sheet->ClearCell("B2"_pos);
-//    std::cout << std::endl;
-//    sheet->PrintValues(std::cout);
+    auto sheet = CreateSheet();
+    sheet->SetCell("A1"_pos, "1");
+    sheet->SetCell("A2"_pos, "=A1");
+    sheet->SetCell("A3"_pos, "=A2");
+    sheet->SetCell("B1"_pos, "=A1+A2");
+    sheet->SetCell("B2"_pos, "=A2+A3");
+    sheet->PrintValues(std::cout);
+    sheet->ClearCell("A1"_pos);
+    sheet->ClearCell("A2"_pos);
+    sheet->ClearCell("A3"_pos);
+    sheet->ClearCell("B1"_pos);
+    sheet->ClearCell("B2"_pos);
+    std::cout << std::endl;
+    sheet->PrintValues(std::cout);
 
 //    sheet->SetCell("A1"_pos, "1");
 //    sheet->SetCell("A2"_pos, "=A1");

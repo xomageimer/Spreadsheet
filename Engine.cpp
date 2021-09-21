@@ -276,6 +276,7 @@ void SpreadSheet::DeleteRows(int first, int count) {
                     dep_graph.InvalidOutcoming(el.lock());
                 else if (i >= first && i < count) {
                     dep_graph.Delete({i, j}, el.lock());
+                    dep_graph.Delete({i, j});
                     continue;
                 }
                 auto formula = dynamic_cast<DefaultFormula *>(el.lock()->GetFormula().get());
@@ -306,6 +307,7 @@ void SpreadSheet::DeleteCols(int first, int count) {
                     dep_graph.InvalidOutcoming(row[j].lock());
                 else if (j >= first && j < count) {
                     dep_graph.Delete({i, j}, row[j].lock());
+                    dep_graph.Delete({i, j});
                     continue;
                 }
                 auto formula = dynamic_cast<DefaultFormula *>(row[j].lock()->GetFormula().get());
