@@ -674,8 +674,15 @@ void Test006() {
 }
 
 int main() {
-    // TODO ClearCell работает неверно (не удаляет A1 и A2)
     auto sheet = CreateSheet();
+//    sheet->SetCell("A2"_pos, "=A1+A3-C1");
+//    sheet->SetCell("C1"_pos, "15");
+//    sheet->InsertRows(0, 5);
+//    sheet->PrintValues(std::cout);
+//    sheet->ClearCell("A2"_pos);
+//    std::cout << "_____________" << std::endl;
+//    sheet->PrintValues(std::cout);
+//    sheet->SetCell("B2"_pos, "=35");
     sheet->SetCell("A1"_pos, "1");
     sheet->SetCell("A2"_pos, "=A1");
     sheet->SetCell("A3"_pos, "=A2");
@@ -688,7 +695,7 @@ int main() {
     sheet->ClearCell("B1"_pos);
     sheet->ClearCell("B2"_pos);
     std::cout << std::endl;
-    sheet->PrintValues(std::cout);
+    sheet->PrintTexts(std::cout);
 
 //    sheet->SetCell("A1"_pos, "1");
 //    sheet->SetCell("A2"_pos, "=A1");
@@ -716,11 +723,12 @@ int main() {
 //        letter++;
 //    }
 //    sheet->PrintValues(std::cout);
+//    std::cout << std::endl;
 //
 //    letter = 'A';
-//    for (int i = 0; i < 10; i++){
+//    for (int i = 0; i < 11; i++){
 //        numb = i+1;
-//        for (int j = 0; j < 10 - i; j++){
+//        for (int j = 0; j < 11 - i; j++){
 //            std::string cell = letter + std::to_string(numb);
 //            sheet->ClearCell(operator""_pos(cell.c_str(), cell.size()));
 //            numb++;
@@ -728,6 +736,9 @@ int main() {
 //        letter++;
 //    }
 //    sheet->PrintValues(std::cout);
+
+//    sheet->SetCell("XFD16384"_pos, "=15");
+//    sheet->SetCell("A1"_pos, "=XFG16394-2");
 
 //    auto sheet = CreateSheet();
 //    sheet->SetCell("A1"_pos, "=F7+5");
@@ -753,49 +764,49 @@ int main() {
 //    sheet->SetCell("A2"_pos, "=A1+B1");
 //    sheet->PrintValues(std::cout);
 
-  TestRunner tr;
-  RUN_TEST(tr, TestPositionAndStringConversion);
-  RUN_TEST(tr, TestPositionToStringInvalid);
-  RUN_TEST(tr, TestStringToPositionInvalid);
-  RUN_TEST(tr, TestEmpty);
-  RUN_TEST(tr, TestInvalidPosition);
-  RUN_TEST(tr, TestSetCellPlainText);
-  RUN_TEST(tr, TestClearCell);
-  RUN_TEST(tr, TestFormulaArithmetic);
-  RUN_TEST(tr, TestFormulaReferences);
-  RUN_TEST(tr, TestFormulaExpressionFormatting);
-  RUN_TEST(tr, TestFormulaReferencedCells);
-
-  RUN_TEST(tr, TestFormulaHandleInsertion);
-  RUN_TEST(tr, TestInsertionOverflow);
-  RUN_TEST(tr, TestFormulaHandleDeletion);
-  RUN_TEST(tr, TestErrorValue);
-
-  RUN_TEST(tr, TestErrorDiv0);
-  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
-  RUN_TEST(tr, TestFormulaInvalidPosition);
-
-  RUN_TEST(tr, TestCellErrorPropagation);
-  RUN_TEST(tr, TestCellsDeletionSimple);
-  RUN_TEST(tr, TestCellsDeletion);
-  RUN_TEST(tr, TestCellsDeletionAdjacent);
-
-  RUN_TEST(tr, TestPrint);
-  RUN_TEST(tr, TestCellReferences);
-  RUN_TEST(tr, TestFormulaIncorrect);
-
-  RUN_TEST(tr, TestCellCircularReferences);
-
-  RUN_TEST(tr, TestPascalTriangle);
-
-//  RUN_TEST(tr, TestNonExistentCell);
-
-  RUN_TEST(tr, Test001);
-  RUN_TEST(tr, Test002);
-  RUN_TEST(tr, Test003);
-//  RUN_TEST(tr, Test004);
-  RUN_TEST(tr, Test005);
-  RUN_TEST(tr, Test006);
+//  TestRunner tr;
+//  RUN_TEST(tr, TestPositionAndStringConversion);
+//  RUN_TEST(tr, TestPositionToStringInvalid);
+//  RUN_TEST(tr, TestStringToPositionInvalid);
+//  RUN_TEST(tr, TestEmpty);
+//  RUN_TEST(tr, TestInvalidPosition);
+//  RUN_TEST(tr, TestSetCellPlainText);
+//  RUN_TEST(tr, TestClearCell);
+//  RUN_TEST(tr, TestFormulaArithmetic);
+//  RUN_TEST(tr, TestFormulaReferences);
+//  RUN_TEST(tr, TestFormulaExpressionFormatting);
+//  RUN_TEST(tr, TestFormulaReferencedCells);
+//
+//  RUN_TEST(tr, TestFormulaHandleInsertion);
+//  RUN_TEST(tr, TestInsertionOverflow);
+//  RUN_TEST(tr, TestFormulaHandleDeletion);
+//  RUN_TEST(tr, TestErrorValue);
+//
+//  RUN_TEST(tr, TestErrorDiv0);
+//  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
+//  RUN_TEST(tr, TestFormulaInvalidPosition);
+//
+//  RUN_TEST(tr, TestCellErrorPropagation);
+//  RUN_TEST(tr, TestCellsDeletionSimple);
+//  RUN_TEST(tr, TestCellsDeletion);
+//  RUN_TEST(tr, TestCellsDeletionAdjacent);
+//
+//  RUN_TEST(tr, TestPrint);
+//  RUN_TEST(tr, TestCellReferences);
+//  RUN_TEST(tr, TestFormulaIncorrect);
+//
+//  RUN_TEST(tr, TestCellCircularReferences);
+//
+//  RUN_TEST(tr, TestPascalTriangle);
+//
+////  RUN_TEST(tr, TestNonExistentCell);
+//
+//  RUN_TEST(tr, Test001);
+//  RUN_TEST(tr, Test002);
+//  RUN_TEST(tr, Test003);
+////  RUN_TEST(tr, Test004);
+//  RUN_TEST(tr, Test005);
+//  RUN_TEST(tr, Test006);
 
   return 0;
 }

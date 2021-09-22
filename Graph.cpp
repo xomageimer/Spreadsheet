@@ -19,12 +19,10 @@ void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& c
     auto it = vertexes.find(cell_ptr);
     for (auto el : it->second.incoming_ids) {
         auto child = vertexes.find(incoming.at(el).to.lock());
-        auto ptr_child = child->first;
         auto & out_from_child = child->second.outcoming_ids;
         auto to_del = std::find_if(out_from_child.begin(), out_from_child.end(), [&](auto id) {
             return outcoming[id].to.lock() == it->first;
         });
-        auto num_del = *to_del;
         outcoming.erase(*to_del);
         out_from_child.erase(to_del);
         incoming.erase(el);
@@ -66,7 +64,7 @@ void DependencyGraph::AddEdge(Position par_pos, Position child_pos) {
         throw std::logic_error("can't find parent cell");
     auto par_cell = par_cell_weak.lock();
 
-    if (!(spread_sheet->size > child_pos) || (spread_sheet->cells[child_pos.row][child_pos.col].expired() && !IsExist(child_pos))){
+    if (!(spread_sheet->size > child_pos) || (static_cast<int>(spread_sheet->cells[child_pos.row].size()) <= child_pos.col) || (spread_sheet->cells[child_pos.row][child_pos.col].expired() && !IsExist(child_pos))){
         auto it = cache_cells_located_behind_table.emplace(child_pos, CacheVertex{std::make_shared<DefaultCell>("")});
         vertexes.emplace(it.first->second.cur_val, Edges{});
     } else {
