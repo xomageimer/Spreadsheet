@@ -17,12 +17,15 @@ std::weak_ptr<DefaultCell> DependencyGraph::AddVertex(Position pos, std::shared_
 
 void DependencyGraph::Delete(Position pos, const std::shared_ptr<DefaultCell>& cell_ptr) {
     auto it = vertexes.find(cell_ptr);
+    auto inc_ids = it->second.incoming_ids;
     for (auto el : it->second.incoming_ids) {
         auto child = vertexes.find(incoming.at(el).to.lock());
         auto & out_from_child = child->second.outcoming_ids;
         auto to_del = std::find_if(out_from_child.begin(), out_from_child.end(), [&](auto id) {
             return outcoming[id].to.lock() == it->first;
         });
+        assert(to_del != out_from_child.end());
+
         outcoming.erase(*to_del);
         out_from_child.erase(to_del);
         incoming.erase(el);
@@ -158,7 +161,7 @@ void DependencyGraph::InsertRows(int before, int count) {
 
     std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.row > before + count) {
+        if (el.first.row >= before) {
             new_cache[{el.first.row + count, el.first.col}] = std::move(el.second);
         } else {
             new_cache[el.first] = std::move(el.second);
@@ -175,7 +178,7 @@ void DependencyGraph::InsertCols(int before, int count) {
 
     std::map<Position, CacheVertex> new_cache;
     for (auto & el : cache_cells_located_behind_table){
-        if (el.first.col > before + count) {
+        if (el.first.col >= before) {
             new_cache[{el.first.row, el.first.col + count}] = std::move(el.second);
         } else {
             new_cache[el.first] = std::move(el.second);

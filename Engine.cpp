@@ -209,13 +209,16 @@ void SpreadSheet::ClearCell(Position pos) {
 }
 
 void SpreadSheet::InsertRows(int before, int count) {
-    if (size.rows + count > Position::kMaxRows)
+    if (size.rows + count >= Position::kMaxRows)
         throw TableTooBigException("The number of rows is greater than the maximum");
 
-    auto it = cells.begin() + before;
-    cells.insert(it, count, std::vector<std::weak_ptr<DefaultCell>>());
+    size_t prev_size = cells.size();
+    cells.resize(prev_size + count);
+    for (int row = static_cast<int>(prev_size) - 1; row >= before; --row){
+        std::swap(cells[row], cells[row + count]);
+    }
     dep_graph.InsertRows(before, count);
-    size.rows += count;
+    size.rows = cells.size();
 
     for (int i = 0; i < size.rows; i++) {
         for (auto & el : cells[i]) {
@@ -232,13 +235,13 @@ void SpreadSheet::InsertRows(int before, int count) {
 }
 
 void SpreadSheet::InsertCols(int before, int count) {
-    if (size.cols + count > Position::kMaxCols)
+    if (size.cols + count >= Position::kMaxCols)
         throw TableTooBigException("The number of cols is greater than the maximum");
 
     int count_of_new_block = 0;
     try {
         for (auto &row : cells) {
-            if (static_cast<int>(row.size()) >= before) {
+            if (static_cast<int>(row.size() - 1) >= before) {
                 auto it = row.begin() + before;
                 it = row.insert(it, count, {});
             }
@@ -246,7 +249,7 @@ void SpreadSheet::InsertCols(int before, int count) {
         }
     } catch (const std::exception & excep) {
         for (int i = 0; i < count_of_new_block; i++) {
-            if (static_cast<int>(cells[i].size()) >= before) {
+            if (static_cast<int>(cells[i].size() - 1) >= before) {
                 auto it = cells[i].begin() + before;
                 cells[i].erase(it, it + count);
             }
@@ -400,9 +403,10 @@ SpreadSheet::SpreadSheet() : dep_graph(*this), size(Size{0, 0}), default_value("
 void SpreadSheet::TryToCompress(Position from_pos) {
     if (from_pos.col == size.cols - 1) {
         std::optional<int> max_pos;
-        for (int i = 0; i < static_cast<int>(size.rows); i++){
+
+        for (int i = static_cast<int>(size.rows) - 1; i >= 0; i--){
             for (auto col_it = cells[i].rbegin(); col_it != cells[i].rend(); col_it++){
-                if (!col_it->expired() && (!max_pos || i > max_pos.value())) {
+                if (!col_it->expired() && !dep_graph.IsExist(Position{i, static_cast<int>(std::prev(cells[i].rend()) - col_it)}) && (!max_pos || std::prev(cells[i].rend()) - col_it > max_pos.value())) {
                     max_pos.emplace(std::prev(cells[i].rend()) - col_it);
                     break;
                 }
@@ -411,7 +415,7 @@ void SpreadSheet::TryToCompress(Position from_pos) {
 
         for (auto & raw : cells) {
             int to_pos = (!max_pos) ? 0 : (*max_pos + 1);
-            if (static_cast<int>(raw.size()) > to_pos)
+            if (static_cast<int>(raw.size()) >= to_pos)
                 raw.erase(raw.begin() + to_pos, raw.end());
         }
         size.cols = (!max_pos) ? 0 : (*max_pos + 1);
@@ -420,11 +424,12 @@ void SpreadSheet::TryToCompress(Position from_pos) {
         std::optional<int> max_pos;
 
         for (int j = size.rows - 1; j >= 0; j--){
+            int i = 0;
             for (auto & col : cells[j]){
-                if (!col.expired() && (!max_pos || j > max_pos.value())) {
+                if (!col.expired() && !dep_graph.IsExist(Position{j, i}) && (!max_pos || j > max_pos.value())) {
                     max_pos.emplace(j);
-                    break;
                 }
+                i++;
             }
         }
 

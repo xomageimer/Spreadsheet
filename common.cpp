@@ -80,11 +80,11 @@ bool Size::operator==(const Size &rhs) const {
 }
 
 bool operator<(const Size &lhs, const Position &rhs) {
-    return lhs.rows < rhs.row + 1 || (lhs.rows >= rhs.row + 1 && lhs.cols < rhs.col + 1);
+    return lhs.rows < rhs.row + 1 || (lhs.rows == rhs.row + 1 && lhs.cols <= rhs.col + 1);
 }
 
 bool operator<(const Position &lhs, const Size &rhs) {
-    return lhs.row < rhs.rows && lhs.col < rhs.cols;
+    return lhs.row + 1 < rhs.rows || (lhs.row + 1 == rhs.rows && lhs.col + 1 <= rhs.cols);
 }
 
 bool operator>(const Size &lhs, const Position &rhs) {
