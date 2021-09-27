@@ -622,11 +622,11 @@ void TestPascalTriangle(){
 
     ASSERT_EQUAL(sheet->GetCell("L11"_pos)->GetValue(), ICell::Value(1));
 }
-
-void TestNonExistentCell() {
-    auto sheet= CreateSheet();
-    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), ICell::Value(0.00));
-}
+//
+//void TestNonExistentCell() {
+//    auto sheet = CreateSheet();
+//    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), ICell::Value(0.00));
+//}
 
 void Test001() {
     auto sheet= CreateSheet();
@@ -652,7 +652,7 @@ void Test003() {
     ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(),ICell::Value("="));
 }
 
-// TODO под вопросос такой ввод
+// TODO под вопросом такой ввод
 //void Test004() {
 //    auto sheet= CreateSheet();
 //    sheet->SetCell("A1"_pos, "=1e+1000");
@@ -675,34 +675,58 @@ void Test006() {
 
 int main() {
     auto sheet = CreateSheet();
-//    sheet->SetCell("A2"_pos, "=A1+B3-C1");
-//    sheet->SetCell("C1"_pos, "15");
-//    sheet->PrintValues(std::cout);
-//    sheet->InsertRows(1, 3);
-//    sheet->InsertCols(0, 2);
-//    std::cout << "_____________________" << std::endl;
-//    sheet->PrintValues(std::cout);
-//    sheet->SetCell("D6"_pos, "=-11");
-//    std::cout << "_____________________" << std::endl;
-//    sheet->PrintValues(std::cout);
-//    sheet->ClearCell("A2"_pos);
-//    std::cout << "_____________" << std::endl;
-//    sheet->PrintValues(std::cout);
-//    sheet->SetCell("B2"_pos, "=35");
-
-    sheet->SetCell("A1"_pos, "1");
+    sheet->SetCell("A1"_pos, "=1");
     sheet->SetCell("A2"_pos, "=A1");
-    sheet->SetCell("A3"_pos, "=A2");
-    sheet->SetCell("B1"_pos, "=A1+A2");
-    sheet->SetCell("B2"_pos, "=A2+A3");
+    sheet->SetCell("A3"_pos, "0");
+
+    sheet->SetCell("B1"_pos, "=A2");
+    sheet->SetCell("B2"_pos, "=B1");
+    sheet->SetCell("B3"_pos, "=A2 + B2");
+
     sheet->PrintValues(std::cout);
-    sheet->ClearCell("A1"_pos);
-    sheet->ClearCell("A2"_pos);
-    sheet->ClearCell("A3"_pos);
-    sheet->ClearCell("B1"_pos);
-    sheet->ClearCell("B2"_pos);
-    std::cout << std::endl;
-    sheet->PrintTexts(std::cout);
+    std::cout << "_________________________________" << std::endl;
+
+    sheet->InsertRows(1, 2);
+
+    auto cell = sheet->GetCell("A2"_pos);
+    std::cout << (cell == nullptr) << std::endl;
+    std::cout << "_________________________________" << std::endl;
+
+    sheet->PrintValues(std::cout);
+
+
+//    sheet->SetCell("C1"_pos, "=B1");
+//    sheet->PrintTexts(std::cout);
+//    std::cout << "_________________________________" << std::endl;
+//    sheet->InsertRows(0, 5);
+//    sheet->PrintTexts(std::cout);
+
+
+//    sheet->SetCell("A2"_pos, "NIGGER");
+//    sheet->SetCell("C3"_pos, "=A1 - 14");
+//    sheet->PrintValues(std::cout);
+//
+//    sheet->InsertRows(2, 5);
+//    std::cout << "_______________________________" << std::endl;
+//    sheet->PrintValues(std::cout);
+//
+//    sheet->InsertRows(sheet->GetPrintableSize().rows, 6);
+//    std::cout << "_______________________________" << std::endl;
+//    sheet->PrintValues(std::cout);
+
+//    sheet->SetCell("A1"_pos, "1");
+//    sheet->SetCell("A2"_pos, "=A1");
+//    sheet->SetCell("A3"_pos, "=A2");
+//    sheet->SetCell("B1"_pos, "=A1+A2");
+//    sheet->SetCell("B2"_pos, "=A2+A3");
+//    sheet->PrintValues(std::cout);
+//    sheet->ClearCell("A1"_pos);
+//    sheet->ClearCell("A2"_pos);
+//    sheet->ClearCell("A3"_pos);
+//    sheet->ClearCell("B1"_pos);
+//    sheet->ClearCell("B2"_pos);
+//    std::cout << std::endl;
+//    sheet->PrintTexts(std::cout);
 
 //    sheet->SetCell("A1"_pos, "1");
 //    sheet->SetCell("A2"_pos, "=A1");
@@ -730,10 +754,7 @@ int main() {
 //        letter++;
 //    }
 //    sheet->PrintValues(std::cout);
-//
-//    sheet->InsertRows(2, 1);
 //    std::cout << "_____________________________________________________" << std::endl;
-//    sheet->PrintValues(std::cout);
 //
 //    letter = 'A';
 //    for (int i = 0; i < 11; i++){
@@ -758,7 +779,7 @@ int main() {
 //    sheet->SetCell("A5"_pos, "11");
 //    sheet->PrintValues(std::cout);
 //    std::cout << "----------------------" << std::endl;
-//    sheet->SetCell("A1"_pos, "=B2"); // TODO F7 не удаляется
+//    sheet->SetCell("A1"_pos, "=B2");
 //    sheet->SetCell("B1"_pos, "NIGGER");
 ////    sheet->ClearCell("F7"_pos);
 //    sheet->DeleteCols(0);
@@ -775,49 +796,49 @@ int main() {
 //    sheet->SetCell("A2"_pos, "=A1+B1");
 //    sheet->PrintValues(std::cout);
 
-  TestRunner tr;
-  RUN_TEST(tr, TestPositionAndStringConversion);
-  RUN_TEST(tr, TestPositionToStringInvalid);
-  RUN_TEST(tr, TestStringToPositionInvalid);
-  RUN_TEST(tr, TestEmpty);
-  RUN_TEST(tr, TestInvalidPosition);
-  RUN_TEST(tr, TestSetCellPlainText);
-  RUN_TEST(tr, TestClearCell);
-  RUN_TEST(tr, TestFormulaArithmetic);
-  RUN_TEST(tr, TestFormulaReferences);
-  RUN_TEST(tr, TestFormulaExpressionFormatting);
-  RUN_TEST(tr, TestFormulaReferencedCells);
-
-  RUN_TEST(tr, TestFormulaHandleInsertion);
-  RUN_TEST(tr, TestInsertionOverflow);
-  RUN_TEST(tr, TestFormulaHandleDeletion);
-  RUN_TEST(tr, TestErrorValue);
-
-  RUN_TEST(tr, TestErrorDiv0);
-  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
-  RUN_TEST(tr, TestFormulaInvalidPosition);
-
-  RUN_TEST(tr, TestCellErrorPropagation);
-  RUN_TEST(tr, TestCellsDeletionSimple);
-  RUN_TEST(tr, TestCellsDeletion);
-  RUN_TEST(tr, TestCellsDeletionAdjacent);
-
-  RUN_TEST(tr, TestPrint);
-  RUN_TEST(tr, TestCellReferences);
-  RUN_TEST(tr, TestFormulaIncorrect);
-
-  RUN_TEST(tr, TestCellCircularReferences);
-
-  RUN_TEST(tr, TestPascalTriangle);
-
-//  RUN_TEST(tr, TestNonExistentCell);
-
-  RUN_TEST(tr, Test001);
-  RUN_TEST(tr, Test002);
-  RUN_TEST(tr, Test003);
-//  RUN_TEST(tr, Test004);
-  RUN_TEST(tr, Test005);
-  RUN_TEST(tr, Test006);
+//  TestRunner tr;
+//  RUN_TEST(tr, TestPositionAndStringConversion);
+//  RUN_TEST(tr, TestPositionToStringInvalid);
+//  RUN_TEST(tr, TestStringToPositionInvalid);
+//  RUN_TEST(tr, TestEmpty);
+//  RUN_TEST(tr, TestInvalidPosition);
+//  RUN_TEST(tr, TestSetCellPlainText);
+//  RUN_TEST(tr, TestClearCell);
+//  RUN_TEST(tr, TestFormulaArithmetic);
+//  RUN_TEST(tr, TestFormulaReferences);
+//  RUN_TEST(tr, TestFormulaExpressionFormatting);
+//  RUN_TEST(tr, TestFormulaReferencedCells);
+//
+//  RUN_TEST(tr, TestFormulaHandleInsertion);
+//  RUN_TEST(tr, TestInsertionOverflow);
+//  RUN_TEST(tr, TestFormulaHandleDeletion);
+//  RUN_TEST(tr, TestErrorValue);
+//
+//  RUN_TEST(tr, TestErrorDiv0);
+//  RUN_TEST(tr, TestEmptyCellTreatedAsZero);
+//  RUN_TEST(tr, TestFormulaInvalidPosition);
+//
+//  RUN_TEST(tr, TestCellErrorPropagation);
+//  RUN_TEST(tr, TestCellsDeletionSimple);
+//  RUN_TEST(tr, TestCellsDeletion);
+//  RUN_TEST(tr, TestCellsDeletionAdjacent);
+//
+//  RUN_TEST(tr, TestPrint);
+//  RUN_TEST(tr, TestCellReferences);
+//  RUN_TEST(tr, TestFormulaIncorrect);
+//
+//  RUN_TEST(tr, TestCellCircularReferences);
+//
+//  RUN_TEST(tr, TestPascalTriangle);
+//
+////  RUN_TEST(tr, TestNonExistentCell);
+//
+//  RUN_TEST(tr, Test001);
+//  RUN_TEST(tr, Test002);
+//  RUN_TEST(tr, Test003);
+////  RUN_TEST(tr, Test004);
+//  RUN_TEST(tr, Test005);
+//  RUN_TEST(tr, Test006);
 
   return 0;
 }

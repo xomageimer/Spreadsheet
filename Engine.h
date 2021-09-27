@@ -101,8 +101,8 @@ private:
 
     DefaultCell default_value;
 };
-//TODO исправить утечку памяти! (мб не работает DELETE)
 
+bool is_str_equal(std::string_view str1, std::string_view str2);
 bool operator<(const Size & lhs, const Position & rhs);
 bool operator<(const Position & lhs, const Size & rhs);
 bool operator>(const Size & lhs, const Position & rhs);

@@ -45,6 +45,8 @@ public:
 
     void InvalidOutcoming(std::shared_ptr<struct DefaultCell> cell_ptr);
     void InvalidOutcoming(Position pos);
+
+    Position GetMaxCachePos() const;
 private:
     std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;
     std::map<Position, CacheVertex> cache_cells_located_behind_table;

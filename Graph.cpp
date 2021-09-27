@@ -152,7 +152,6 @@ void DependencyGraph::InvalidOutcoming(Position pos) {
         InvalidOutcoming(cache_cells_located_behind_table.at(pos).cur_val);
 }
 
-// TODO создаю тут мапу а потом в нее муваю всё что не было перемещено вставкой (тоже самое с удалением)
 void DependencyGraph::InsertRows(int before, int count) {
     if (cache_cells_located_behind_table.empty())
         return;
@@ -226,4 +225,10 @@ void DependencyGraph::CheckAcylicityImpl(std::shared_ptr<struct DefaultCell> cel
         cols.insert(outcoming.at(id).to.lock());
         CheckAcylicityImpl(outcoming.at(id).to.lock(), cols);
     }
+}
+
+Position DependencyGraph::GetMaxCachePos() const {
+    if (cache_cells_located_behind_table.empty())
+        return {0, 0};
+    return std::prev(cache_cells_located_behind_table.end())->first;
 }

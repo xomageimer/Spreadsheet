@@ -84,7 +84,7 @@ bool operator<(const Size &lhs, const Position &rhs) {
 }
 
 bool operator<(const Position &lhs, const Size &rhs) {
-    return lhs.row + 1 < rhs.rows || (lhs.row + 1 == rhs.rows && lhs.col + 1 <= rhs.cols);
+    return lhs.row + 1 <= rhs.rows && lhs.col + 1 <= rhs.cols;
 }
 
 bool operator>(const Size &lhs, const Position &rhs) {

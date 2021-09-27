@@ -65,6 +65,22 @@ std::unique_ptr<IFormula> ParseFormula(std::string expression) {
     return formula;
 }
 
+bool is_str_equal(std::string_view str1, std::string_view str2) {
+    for (auto it_s1 = str1.begin(), it_s2 = str2.begin(); it_s1 != str1.end(); it_s1++, it_s2++){
+        while (it_s1 != str1.end() && isspace(*it_s1))
+            it_s1++;
+        while (it_s2 != str2.end() && isspace(*it_s2))
+            it_s2++;
+
+        if (it_s1 == str1.end() || it_s2 == str2.end())
+            return false;
+
+        if (*it_s1 != *it_s2)
+            return false;
+    }
+    return true;
+}
+
 IFormula::Value DefaultFormula::GetValue() const {
     auto val = Evaluate(*sheet_);
     if (status == Status::Error)
@@ -145,7 +161,7 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
     CheckSizeCorrectly(pos);
 
     // TODO мб написать компортаор кт будет игнорировать пробельные символы
-    if (auto cell = cells.at(pos.row).at(pos.col).lock(); (cell && cell->GetText() == text))
+    if (auto cell = cells.at(pos.row).at(pos.col).lock(); (cell && is_str_equal(cell->GetText(), text)))
         return;
 
     std::shared_ptr<DefaultCell> prev_val = nullptr;
@@ -179,15 +195,16 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 }
 
 const ICell* SpreadSheet::GetCell(Position pos) const {
-    if (!(pos < size) || static_cast<int>(cells.at(pos.row).size()) <= pos.col)
-        return nullptr;
-    return cells.at(pos.row).at(pos.col).lock().get();
+    return const_cast<SpreadSheet *>(this)->GetCell(pos);
 }
 
 ICell* SpreadSheet::GetCell(Position pos) {
     if (!(pos < size))
         return nullptr;
-    else if (static_cast<int>(cells.at(pos.row).size()) <= pos.col || cells.at(pos.row).at(pos.col).expired())
+    else if (pos.row < static_cast<int>(cells.size()) && pos.col >= static_cast<int>(cells[pos.row].size()) && pos.col <  size.cols) {
+        return &default_value;
+    }
+    else if (cells.at(pos.row).at(pos.col).expired())
         return &default_value;
     return cells.at(pos.row).at(pos.col).lock().get();
 }
@@ -209,8 +226,22 @@ void SpreadSheet::ClearCell(Position pos) {
 }
 
 void SpreadSheet::InsertRows(int before, int count) {
-    if (size.rows + count >= Position::kMaxRows)
+    if (size.rows + count >= Position::kMaxRows || dep_graph.GetMaxCachePos().row + count >= Position::kMaxRows)
         throw TableTooBigException("The number of rows is greater than the maximum");
+    if (size.rows <= before)
+        return;
+
+
+    std::stringstream s_;
+    PrintTexts(s_);
+    if (s_.str() != "=1\t=A2\n"
+                    "=A1\t=B1\n"
+                    "0\t=A2+B2\n" || (size.rows != 3 && size.cols != 2)) {
+        std::stringstream ss;
+        ss << "before = " << std::to_string(before) << ", count =" << std::to_string(count) << std::endl;
+        PrintTexts(ss);
+        throw std::logic_error(ss.str());
+    }
 
     size_t prev_size = cells.size();
     cells.resize(prev_size + count);
@@ -235,8 +266,10 @@ void SpreadSheet::InsertRows(int before, int count) {
 }
 
 void SpreadSheet::InsertCols(int before, int count) {
-    if (size.cols + count >= Position::kMaxCols)
+    if (size.cols + count >= Position::kMaxCols || dep_graph.GetMaxCachePos().col + count >= Position::kMaxRows)
         throw TableTooBigException("The number of cols is greater than the maximum");
+    if (size.cols <= before)
+        return;
 
     int count_of_new_block = 0;
     try {
@@ -342,21 +375,19 @@ Size SpreadSheet::GetPrintableSize() const {
 
 void SpreadSheet::PrintValues(std::ostream &output) const {
     for (int i = 0; i < size.rows; i++){
-        bool is_first = true;
-        if (cells[i].empty())
-            output << '\t';
-        for (int j = 0; j < static_cast<int>(cells[i].size()); j++) {
-            if (!is_first)
-                output << '\t';
-            is_first = false;
-            if (auto cell = GetCell({i, j}); cell) {
-                if (std::holds_alternative<double>(cell->GetValue()))
-                    output << std::get<double>(cell->GetValue());
-                else if (std::holds_alternative<FormulaError>(cell->GetValue()))
-                    output << std::get<FormulaError>(cell->GetValue()).ToString();
-                else
-                    output << std::get<std::string>(cell->GetValue());
+        for (int j = 0; j < size.cols; j++) {
+            if (static_cast<int>(cells[i].size()) > j) {
+                if (auto cell = GetCell({i, j}); cell) {
+                    if (std::holds_alternative<double>(cell->GetValue()))
+                        output << std::get<double>(cell->GetValue());
+                    else if (std::holds_alternative<FormulaError>(cell->GetValue()))
+                        output << std::get<FormulaError>(cell->GetValue()).ToString();
+                    else
+                        output << std::get<std::string>(cell->GetValue());
+                }
             }
+            if (j != size.cols - 1)
+                output << '\t';
         }
         output << '\n';
     }
@@ -364,22 +395,19 @@ void SpreadSheet::PrintValues(std::ostream &output) const {
 
 void SpreadSheet::PrintTexts(std::ostream &output) const {
     for (int i = 0; i < size.rows; i++){
-        bool is_first = true;
-        if (cells[i].empty())
-            output << '\t';
-        for (int j = 0; j < static_cast<int>(cells[i].size()); j++) {
-            if (!is_first)
-                output << '\t';
-            is_first = false;
-            if (auto cell = GetCell({i, j}); cell) {
-                output << cell->GetText();
+        for (int j = 0; j < size.cols; j++) {
+            if (static_cast<int>(cells[i].size()) > j) {
+                if (auto cell = GetCell({i, j}); cell) {
+                    output << cell->GetText();
+                }
             }
+            if (j != size.cols - 1)
+                output << '\t';
         }
         output << '\n';
     }
 }
 
-// TODO переделать TryToCompress по аналогии с решеинем с git
 void SpreadSheet::CheckSizeCorrectly(Position pos) {
     if (size.rows <= pos.row) {
         if (size.rows == Position::kMaxRows)
