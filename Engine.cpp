@@ -160,7 +160,6 @@ void SpreadSheet::SetCell(Position pos, std::string text) {
 
     CheckSizeCorrectly(pos);
 
-    // TODO мб написать компортаор кт будет игнорировать пробельные символы
     if (auto cell = cells.at(pos.row).at(pos.col).lock(); (cell && is_str_equal(cell->GetText(), text)))
         return;
 
@@ -198,15 +197,18 @@ const ICell* SpreadSheet::GetCell(Position pos) const {
     return const_cast<SpreadSheet *>(this)->GetCell(pos);
 }
 
+// TODO ячейка - nullptr, если на нее никто не ссылается
 ICell* SpreadSheet::GetCell(Position pos) {
-    if (!(pos < size))
+    if (pos.row > size.rows - 1 || pos.col > size.cols - 1) {
         return nullptr;
-    else if (pos.row < static_cast<int>(cells.size()) && pos.col >= static_cast<int>(cells[pos.row].size()) && pos.col <  size.cols) {
-        return &default_value;
     }
-    else if (cells.at(pos.row).at(pos.col).expired())
-        return &default_value;
-    return cells.at(pos.row).at(pos.col).lock().get();
+    else if (static_cast<int>(cells.at(pos.row).size()) <= pos.col){
+        if (dep_graph.HasOutcomings(pos))
+            return &default_value;
+        else return nullptr;
+    }
+    auto& cell = cells.at(pos.row).at(pos.col);
+    return (cell.expired() || cell.lock()->GetText().empty()) ? nullptr : cell.lock().get();
 }
 
 void SpreadSheet::ClearCell(Position pos) {
@@ -232,16 +234,16 @@ void SpreadSheet::InsertRows(int before, int count) {
         return;
 
 
-    std::stringstream s_;
-    PrintTexts(s_);
-    if (s_.str() != "=1\t=A2\n"
-                    "=A1\t=B1\n"
-                    "0\t=A2+B2\n" || (size.rows != 3 && size.cols != 2)) {
-        std::stringstream ss;
-        ss << "before = " << std::to_string(before) << ", count =" << std::to_string(count) << std::endl;
-        PrintTexts(ss);
-        throw std::logic_error(ss.str());
-    }
+//    std::stringstream s_;
+//    PrintTexts(s_);
+//    if (s_.str() != "=1\t=A2\n"
+//                    "=A1\t=B1\n"
+//                    "0\t=A2+B2\n" || (size.rows != 3 && size.cols != 2)) {
+//        std::stringstream ss;
+//        ss << "before = " << std::to_string(before) << ", count =" << std::to_string(count) << std::endl;
+//        PrintTexts(ss);
+//        throw std::logic_error(ss.str());
+//    }
 
     size_t prev_size = cells.size();
     cells.resize(prev_size + count);

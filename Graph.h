@@ -46,6 +46,8 @@ public:
     void InvalidOutcoming(std::shared_ptr<struct DefaultCell> cell_ptr);
     void InvalidOutcoming(Position pos);
 
+    bool HasOutcomings(Position pos);
+
     Position GetMaxCachePos() const;
 private:
     std::unordered_map<std::shared_ptr<struct DefaultCell>, Edges> vertexes;

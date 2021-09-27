@@ -232,3 +232,11 @@ Position DependencyGraph::GetMaxCachePos() const {
         return {0, 0};
     return std::prev(cache_cells_located_behind_table.end())->first;
 }
+
+bool DependencyGraph::HasOutcomings(Position pos) {
+    if (!IsExist(pos))
+        return false;
+    if (!vertexes.at(cache_cells_located_behind_table.at(pos).cur_val).outcoming_ids.empty())
+        return true;
+    else return false;
+}
